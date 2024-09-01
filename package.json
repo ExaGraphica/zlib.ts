@@ -1,0 +1,30 @@
+{
+    "name": "zlib.ts",
+    "version": "1.0.0",
+    "description": "Imaya's zlib.js ported to Typescript. Compact Deflate/Inflate, GZip, PKZIP Library",
+    "main": "index.ts",
+    "scripts": {
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Exagraphica/zlib.ts.git"
+    },
+    "keywords": [
+        "zlib",
+        "deflate",
+        "gzip",
+        "zip"
+    ],
+    "dependencies": {},
+    "devDependencies": {
+        "typescript": "^5.5.0",
+        "esbuild": "^0.23.1",
+        "eslint": "^9.9.1"
+    },
+    "author": "ExaGraphica",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Exagraphica/zlib.ts/issues"
+    },
+    "homepage": "https://github.com/Exagraphica/zlib.ts#readme"
+}
