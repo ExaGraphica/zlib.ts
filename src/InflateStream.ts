@@ -23,7 +23,7 @@ export class InflateStream {
      * decompress.
      * @return {!Uint8Array} inflated buffer.
      */
-    decompress(input: Uint8Array) {
+    decompress(input: Uint8Array): Uint8Array {
         /** @type {number} adler-32 checksum */
         var adler32;
 

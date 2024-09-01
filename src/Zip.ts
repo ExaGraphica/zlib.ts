@@ -3,26 +3,17 @@ import { RawDeflate, RawDeflateOptions } from "./RawDeflate";
 import { stringToByteArray } from "./Util";
 import { ZipEncryption } from "./ZipEncryption";
 
-/**
- * @enum {number}
- */
 export enum ZipCompressionMethod{
     STORE = 0,
     DEFLATE = 8
 };
 
-/**
- * @enum {number}
- */
 export enum ZipOperatingSystem{
     MSDOS = 0,
     UNIX = 3,
     MACINTOSH = 7
 };
 
-/**
- * @enum {number}
- */
 export enum ZipFlags{
     ENCRYPT = 0x0001,
     DESCRIPTOR = 0x0008,

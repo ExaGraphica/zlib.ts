@@ -125,7 +125,7 @@ export class LZ77Match {
      * @return {!Array<number>} Array of [code, extension bit, extension bit length].
      * @private
      */
-    getDistanceCode_(dist: number): number[] {
+    private getDistanceCode(dist: number): number[] {
         var r: number[];
 
         switch (true) {
@@ -185,7 +185,7 @@ export class LZ77Match {
         codeArray[pos++] = code1 >> 24;
 
         // distance
-        var code2 = this.getDistanceCode_(this.backwardDistance);
+        var code2 = this.getDistanceCode(this.backwardDistance);
         codeArray[pos++] = code2[0];
         codeArray[pos++] = code2[1];
         codeArray[pos++] = code2[2];
@@ -344,10 +344,10 @@ export class RawDeflate{
         var data: Uint16Array = this.LZ77(blockArray);
         
         // Calculating huffman codes for the literals+lengths and the distances
-        var litLenLengths = this.getLengths_(this.freqsLitLen!, 15);
-        var litLenCodes = this.getCodesFromLengths_(litLenLengths);
-        var distLengths = this.getLengths_(this.freqsDist!, 7);
-        var distCodes = this.getCodesFromLengths_(distLengths);
+        var litLenLengths = this.getLengths(this.freqsLitLen!, 15);
+        var litLenCodes = this.getCodesFromLengths(litLenLengths);
+        var distLengths = this.getLengths(this.freqsDist!, 7);
+        var distCodes = this.getCodesFromLengths(distLengths);
         
         // get HLIT, HDIST
         var hlit, hdist;
@@ -355,15 +355,15 @@ export class RawDeflate{
         for (hdist = 30; hdist > 1 && distLengths[hdist - 1] === 0; hdist--) { }
         
         // HCLEN
-        var treeSymbols = this.getTreeSymbols_(hlit, litLenLengths, hdist, distLengths);
-        var treeLengths = this.getLengths_(treeSymbols.freqs, 7);
+        var treeSymbols = this.getTreeSymbols(hlit, litLenLengths, hdist, distLengths);
+        var treeLengths = this.getLengths(treeSymbols.freqs, 7);
         var transLengths = new Array(19);
         for (i = 0; i < 19; i++) {
             transLengths[i] = treeLengths[HuffmanOrder[i]];
         }
         for (var hclen = 19; hclen > 4 && transLengths[hclen - 1] === 0; hclen--) { }
 
-        var treeCodes = this.getCodesFromLengths_(treeLengths);
+        var treeCodes = this.getCodesFromLengths(treeLengths);
 
         // Output header
         stream.writeBits(hlit - 257, 5, true);
@@ -568,7 +568,7 @@ i
 
             // Find the longest possible match
             if (matchList.length > 0) {
-                var longestMatch = this.searchLongestMatch_(dataArray, position, matchList);
+                var longestMatch = this.searchLongestMatch(dataArray, position, matchList);
 
                 if (prevMatch) {
                     // Current match longer than previous?
@@ -618,7 +618,7 @@ i
      * @return {!LZ77Match} The longest and shortest match options
      * @private
      */
-    searchLongestMatch_(data: Uint8Array, position: number, matchList: number[]): LZ77Match {
+    private searchLongestMatch(data: Uint8Array, position: number, matchList: number[]): LZ77Match {
         var currentMatch,
             matchMax = 0,
             dl = data.length;
@@ -660,7 +660,7 @@ i
 
         return new LZ77Match(matchMax, position - currentMatch!);
     }
-
+    
     /**
      * Create Tree-Transmit Symbols
      * reference: PuTTY Deflate implementation
@@ -670,7 +670,7 @@ i
      * @param {!(Array<number>|Uint8Array)} distLengths Code length arrays for literals/lengths.
      * @return {{codes: !Uint32Array,freqs: !Uint8Array}} Tree-Transmit Symbols.
      */
-    getTreeSymbols_(hlit: number, litlenLengths: Uint8Array, hdist: number, distLengths: Uint8Array): {codes: Uint32Array, freqs: Uint8Array} {
+    getTreeSymbols(hlit: number, litlenLengths: Uint8Array, hdist: number, distLengths: Uint8Array): {codes: Uint32Array, freqs: Uint8Array} {
         var src = new Uint32Array(hlit + hdist);
         var i, j; 
         var l = hlit + hdist;//src length
@@ -769,7 +769,7 @@ i
      * @return {!Uint8Array} Code length array.
      * @private
      */
-    getLengths_(freqs: Uint8Array | Uint32Array, limit: number): Uint8Array {
+    private getLengths(freqs: Uint8Array | Uint32Array, limit: number): Uint8Array {
         var nSymbols = freqs.length;
         var heap = new Heap(2 * HUFMAX);
         var length = new Uint8Array(nSymbols);
@@ -796,7 +796,7 @@ i
             values[i] = nodes[i].value;
         }
 
-        var codeLength = this.reversePackageMerge_(values, values.length, limit);
+        var codeLength = this.reversePackageMerge(values, values.length, limit);
 
         for (i = 0; i < nodes.length; ++i) {
             length[nodes[i].index] = codeLength[i];
@@ -812,7 +812,7 @@ i
      * @param {number} limit code length limit.
      * @return {!Uint8Array} code lengths.
      */
-    reversePackageMerge_(freqs: Uint32Array, symbols: number, limit: number): Uint8Array {
+    reversePackageMerge(freqs: Uint32Array, symbols: number, limit: number): Uint8Array {
         var minimumCost = new Uint16Array(limit);
         var flag = new Uint8Array(limit);
         var codeLength = new Uint8Array(symbols);
@@ -915,7 +915,7 @@ i
      * @return {!Uint16Array} Huffman code sequence
      * @private
      */
-    getCodesFromLengths_(lengths: Uint8Array): Uint16Array {
+    private getCodesFromLengths(lengths: Uint8Array): Uint16Array {
         var codes = new Uint16Array(lengths.length),
             count: number[] = [],
             startCode: number[] = [],

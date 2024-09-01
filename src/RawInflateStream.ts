@@ -126,10 +126,10 @@ export class RawInflateStream {
 
         this.status = InflateStreamStatus.BLOCK_HEADER_START;
 
-        this.save_();
+        this.saveBackup();
         header = this.readBits(3);
         if (header < 0) {
-            this.restore_();
+            this.restoreBackup();
             return Z_ERR;
         }
 
@@ -332,7 +332,7 @@ export class RawInflateStream {
      * Save the input pointer and bitfragment for backup purposes.
      * @private
      */
-    save_() {
+    private saveBackup() {
         this.ip_ = this.ip;
         this.bitsbuflen_ = this.bitsbuflen;
         this.bitsbuf_ = this.bitsbuf;
@@ -342,7 +342,7 @@ export class RawInflateStream {
      * Restore the input pointer and bitfragment for backup purposes
      * @private
      */
-    restore_() {
+    private restoreBackup() {
         this.ip = this.ip_;
         this.bitsbuflen = this.bitsbuflen_;
         this.bitsbuf = this.bitsbuf_;
@@ -357,13 +357,13 @@ export class RawInflateStream {
 
         this.status = InflateStreamStatus.BLOCK_BODY_START;
 
-        this.save_();
+        this.saveBackup();
 
         var hlit = this.readBits(5) + 257;//number of literal and length codes.
         var hdist = this.readBits(5) + 1;//number of distance codes.
         var hclen = this.readBits(4) + 4;//number of code lengths.
         if (hlit < 0 || hdist < 0 || hclen < 0) {
-            this.restore_();
+            this.restoreBackup();
             return Z_ERR;
         }
 
@@ -419,7 +419,7 @@ export class RawInflateStream {
             this.litlenTable = buildHuffmanTable(lengthTable.subarray(0, hlit));
             this.distTable = buildHuffmanTable(lengthTable.subarray(hlit));
         } catch (e) {
-            this.restore_();
+            this.restoreBackup();
             return Z_ERR;
         }
 
@@ -445,12 +445,12 @@ export class RawInflateStream {
         this.status = InflateStreamStatus.DECODE_BLOCK_START;
 
         while (true) {
-            this.save_();
+            this.saveBackup();
 
             var code = this.readCodeByTable(litlen);
             if (code < 0) {
                 this.op = op;
-                this.restore_();
+                this.restoreBackup();
                 return -1;
             }
 
@@ -476,7 +476,7 @@ export class RawInflateStream {
                 bits = this.readBits(LengthExtraTable[ti]);
                 if (bits < 0) {
                     this.op = op;
-                    this.restore_();
+                    this.restoreBackup();
                     return Z_ERR;
                 }
                 codeLength += bits;
@@ -486,7 +486,7 @@ export class RawInflateStream {
             code = this.readCodeByTable(dist);
             if (code < 0) {
                 this.op = op;
-                this.restore_();
+                this.restoreBackup();
                 return Z_ERR;
             }
             var codeDist = DistCodeTable[code];
@@ -494,7 +494,7 @@ export class RawInflateStream {
                 bits = this.readBits(DistExtraTable[code]);
                 if (bits < 0) {
                     this.op = op;
-                    this.restore_();
+                    this.restoreBackup();
                     return Z_ERR;
                 }
                 codeDist += bits;

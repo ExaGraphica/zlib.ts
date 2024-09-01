@@ -48,7 +48,7 @@ export class BitStream {
     * @return {number} reversed 32-bit integer.
     * @private
     */
-    private rev32_(n: number): number {
+    private rev32(n: number): number {
         return (BitStream.ReverseTable[n & 0xFF] << 24) |
             (BitStream.ReverseTable[n >>> 8 & 0xFF] << 16) |
             (BitStream.ReverseTable[n >>> 16 & 0xFF] << 8) |
@@ -72,7 +72,7 @@ export class BitStream {
         // Reverse bits
         if (reverse && b > 1) {
             number = b > 8 ?
-                this.rev32_(number) >> (32 - b) :
+                this.rev32(number) >> (32 - b) :
                 BitStream.ReverseTable[number] >> (8 - b);
         }
 

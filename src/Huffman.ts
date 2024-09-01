@@ -9,40 +9,39 @@ export function buildHuffmanTable(lengths: number[] | Uint8Array): HuffmanTable 
     var listSize: number = lengths.length;//length list size.
     var bitLength: number;//bit length.
     var code: number;//huffman code.
-    
+
     /**
      * Skip filling tables of size 2^maxlength.
      * @type {number} skip length for table filling.
-    */
-   var skip: number;
-   
-   var reversed: number;//reversed code.
-   var rtemp: number;//reverse temp.
-   var i: number;//loop counter.
-   var j: number;//loop counter.
-   var value: number;//table value.
-   
-   var maxCodeLength: number = 0;//max code length for table size.
+     */
+    var skip: number;
+
+    var i: number;//loop counter.
+    var j: number;//loop counter.
+    var value: number;//table value.
+
+    var maxCodeLength: number = 0;//max code length for table size.
     var minCodeLength = Number.POSITIVE_INFINITY;//min code length for table size.
-   // Use a for loop instead of Math.min/Math.max;
-   for (i = 0; i < listSize; ++i) {
-       if (lengths[i] > maxCodeLength) {
-           maxCodeLength = lengths[i];
+    // Use a for loop instead of Math.min/Math.max;
+    for (i = 0; i < listSize; ++i) {
+        if (lengths[i] > maxCodeLength) {
+            maxCodeLength = lengths[i];
         }
         if (lengths[i] < minCodeLength) {
             minCodeLength = lengths[i];
         }
     }
-    
-    var size: number = 1 << maxCodeLength;//table size.
-    var table: Uint32Array = new Uint32Array(size);//huffman code table.
+
+    var size = 1 << maxCodeLength;//table size.
+    var table = new Uint32Array(size);//huffman code table.
 
     // Assign Huffman codes in ascending order of bit length
     for (bitLength = 1, code = 0, skip = 2; bitLength <= maxCodeLength;) {
         for (i = 0; i < listSize; ++i) {
             if (lengths[i] === bitLength) {
                 // Since the bit order is reversed, reverse the bit length
-                reversed = 0, rtemp = code;
+                var reversed = 0, //reversed code.
+                    rtemp = code;
                 for (j = 0; j < bitLength; ++j) {
                     reversed = (reversed << 1) | (rtemp & 1);
                     rtemp >>= 1;
