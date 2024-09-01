@@ -5,11 +5,8 @@
 import { BitStream } from "./Bitstream";
 import { Heap } from "./Heap";
 import { HuffmanOrder } from "./RawInflate";
-import { DefaultDeflateBufferSize } from "./Zlib";
+import { DefaultDeflateBufferSize } from "./Constants";
 
-/**
- * @enum {number}
- */
 export enum CompressionType {
     NONE = 0,
     FIXED = 1,
@@ -18,46 +15,22 @@ export enum CompressionType {
 };
 
 
-/**
- * LZ77 Minimum match length
- * @const
- * @type {number}
- */
-const LZ77MinLength: number = 3;
+/** LZ77 Minimum match length */
+const LZ77MinLength = 3;
 
-/**
- * LZ77 Maximum match length
- * @const
- * @type {number}
- */
-const LZ77MaxLength: number = 258;
+/** LZ77 Maximum match length */
+const LZ77MaxLength = 258;
 
-/**
- * LZ77 window size
- * @const
- * @type {number}
- */
-export const WindowSize: number = 0x8000;
+/** LZ77 window size */
+export const WindowSize = 0x8000;
 
-/**
- * Longest code length
- * @const
- * @type {number}
- */
+/** Longest code length */
 const MaxCodeLength = 16;
 
-/**
- * Maximum Huffman code value
- * @const
- * @type {number}
- */
+/** Maximum Huffman code value */
 const HUFMAX = 286;
 
-/**
-* Fixed Huffman Code table
-* @const
-* @type {Array.<Array.<number, number>>}
-*/
+/** Fixed Huffman Code table */
 const FixedHuffmanTable: [number, number][] = (function () {
     var table: [number, number][] = [], i;
 
@@ -93,8 +66,6 @@ export class LZ77Match {
     /**
      * Length code table.
      * Array in the form of [code, extension bit, extension bit length]
-     * @const
-     * @type {!Uint32Array}
      */
     static LengthCodeTable: Uint32Array = (function () {
         var table: number[] = [];
@@ -267,9 +238,9 @@ export class RawDeflate{
 
     /**
      * DEFLATE block creation
-     * @return {!(Array<number>|Uint8Array)} Compressed byte array.
+     * @return {!Uint8Array} Compressed byte array.
      */
-    compress() {
+    compress(): Uint8Array {
         var input = this.input;
         var length = input.length;
 
@@ -302,9 +273,9 @@ export class RawDeflate{
      * Create uncompressed block
      * @param {!(Array<number>|Uint8Array)} blockArray Block data
      * @param {!boolean} isFinalBlock Is this the last block?
-     * @return {!(Array<number>|Uint8Array)} Uncompressed block
+     * @return {!Uint8Array} Uncompressed block
      */
-    makeNocompressBlock(blockArray: number[] | Uint8Array, isFinalBlock: boolean) {
+    makeNocompressBlock(blockArray: number[] | Uint8Array, isFinalBlock: boolean): Uint8Array {
         var output = this.output;
         var op = this.op;
 
@@ -342,9 +313,9 @@ export class RawDeflate{
      * Create fixed huffman block
      * @param {!(Array<number>|Uint8Array)} blockArray Block data
      * @param {!boolean} isFinalBlock Is this the last block?
-     * @return {!(Array<number>|Uint8Array)} Fixed Huffman-coded block
+     * @return {!Uint8Array} Fixed Huffman-coded block
      */
-    makeFixedHuffmanBlock(blockArray: Uint8Array, isFinalBlock: boolean): Uint8Array{
+    makeFixedHuffmanBlock(blockArray: Uint8Array, isFinalBlock: boolean): Uint8Array {
         var stream: BitStream = new BitStream(new Uint8Array(this.output.buffer), this.op);
 
         // header
@@ -361,9 +332,9 @@ export class RawDeflate{
      * Create Dynamic Huffman Block
      * @param {!(Array<number>|Uint8Array)} blockArray Block data
      * @param {!boolean} isFinalBlock Is this the final block?
-     * @return {!(Array<number>|Uint8Array)} Dynamic Huffman-coded block
+     * @return {!(Uint8Array} Dynamic Huffman-coded block
      */
-    makeDynamicHuffmanBlock(blockArray: Uint8Array, isFinalBlock: boolean) {
+    makeDynamicHuffmanBlock(blockArray: Uint8Array, isFinalBlock: boolean): Uint8Array {
         var stream = new BitStream(new Uint8Array(this.output.buffer), this.op);
         
         // header
@@ -448,7 +419,7 @@ export class RawDeflate{
         litLen: [Uint16Array, Uint8Array], 
         dist: [Uint16Array, Uint8Array], 
         stream: BitStream
-    ){
+    ): BitStream {
 
         var litLenCodes = litLen[0];
         var litLenLengths = litLen[1];
@@ -487,7 +458,7 @@ export class RawDeflate{
      * @param {!BitStream} stream Write to BitStream.
      * @return {!BitStream} Huffman-encoded BitStream object.
      */
-    fixedHuffman(dataArray: Uint16Array, stream: BitStream) {
+    fixedHuffman(dataArray: Uint16Array, stream: BitStream): BitStream {
         // Write the code to the Bitstream.
         for (var index = 0; index < dataArray.length; index++) {
             var literal = dataArray[index];
@@ -795,10 +766,10 @@ i
      * Get the lengths of a Huffman Code
      * @param {!(Uint8Array|Uint32Array)} freqs Frequency count array (histogram).
      * @param {number} limit Code length limit.
-     * @return {!(Array<number>|Uint8Array)} Code length array.
+     * @return {!Uint8Array} Code length array.
      * @private
      */
-    getLengths_(freqs: Uint8Array | Uint32Array, limit: number) {
+    getLengths_(freqs: Uint8Array | Uint32Array, limit: number): Uint8Array {
         var nSymbols = freqs.length;
         var heap = new Heap(2 * HUFMAX);
         var length = new Uint8Array(nSymbols);
@@ -839,7 +810,7 @@ i
      * @param {!Uint32Array} freqs sorted probability.
      * @param {number} symbols number of symbols.
      * @param {number} limit code length limit.
-     * @return {!(Array<number>|Uint8Array)} code lengths.
+     * @return {!Uint8Array} code lengths.
      */
     reversePackageMerge_(freqs: Uint32Array, symbols: number, limit: number): Uint8Array {
         var minimumCost = new Uint16Array(limit);
@@ -940,11 +911,11 @@ i
     /**
      * Get Huffman code from code length array
      * reference: PuTTY Deflate implementation
-     * @param {!(Array<number>|Uint8Array)} lengths Code lengths
-     * @return {!(Array<number>|Uint16Array)} Huffman code sequence
+     * @param {!Uint8Array} lengths Code lengths
+     * @return {!Uint16Array} Huffman code sequence
      * @private
      */
-    getCodesFromLengths_(lengths: Uint8Array) {
+    getCodesFromLengths_(lengths: Uint8Array): Uint16Array {
         var codes = new Uint16Array(lengths.length),
             count: number[] = [],
             startCode: number[] = [],

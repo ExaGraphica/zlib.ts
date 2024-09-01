@@ -5,7 +5,7 @@
 
 import { Adler32 } from "./Adler32";
 import { RawDeflateOptions, CompressionType, RawDeflate } from "./RawDeflate";
-import { DefaultBufferSize, DEFLATE_TOKEN } from "./Zlib";
+import { DefaultBufferSize, DEFLATE_TOKEN } from "./Constants";
 
 export interface DeflateOptions extends RawDeflateOptions{
     compressionType?: CompressionType
@@ -44,15 +44,15 @@ export class Deflate {
      * Static compression
      * @param {!(Array|Uint8Array)} input target buffer.
      * @param {Object=} opts option parameters.
-     * @return {!(Array|Uint8Array)} compressed data byte array.
+     * @return {!Uint8Array} compressed data byte array.
      */
-    static compress(input: number[] | Uint8Array, opts: DeflateOptions) {
+    static compress(input: number[] | Uint8Array, opts: DeflateOptions): Uint8Array {
         return (new Deflate(input, opts)).compress();
     };
 
     /**
      * Deflate Compression.
-     * @return {!(Array|Uint8Array)} compressed data byte array.
+     * @return {!Uint8Array} compressed data byte array.
      */
     compress(): Uint8Array {
         var output: Uint8Array = this.output;;

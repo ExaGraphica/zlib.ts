@@ -3,7 +3,7 @@ export type HuffmanTable = [Uint32Array, number, number];
 /**
  * Build huffman table from length list.
  * @param {!(Array.<number>|Uint8Array)} lengths length list.
- * @return {!Array} huffman table.
+ * @return {!HuffmanTable} huffman table.
  */
 export function buildHuffmanTable(lengths: number[] | Uint8Array): HuffmanTable {
     var listSize: number = lengths.length;//length list size.

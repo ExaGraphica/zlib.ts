@@ -6,7 +6,7 @@ export const ZipEncryption = {
      * @param {(Array.<number>|Uint32Array)} key
      * @return {number}
      */
-    getByte(key: Uint32Array) {
+    getByte(key: Uint32Array): number {
         var tmp = ((key[2] & 0xFFFF) | 2);
 
         return ((tmp * (tmp ^ 1)) >> 8) & 0xFF;
@@ -25,9 +25,9 @@ export const ZipEncryption = {
 
     /**
      * @param {(Array.<number>|Uint8Array)} password
-     * @return {!(Array.<number>|Uint32Array|Object)}
+     * @return {!Uint32Array}
      */
-    createKey(password: number[] | Uint8Array | string) {
+    createKey(password: number[] | Uint8Array | string): Uint32Array {
         if(typeof password == 'string') password = stringToByteArray(password);
 
         var key = new Uint32Array([305419896, 591751049, 878082192]);
@@ -44,7 +44,7 @@ export const ZipEncryption = {
      * @param {number} n
      * @return {number}
      */
-    decode(key: Uint32Array, n: number) {
+    decode(key: Uint32Array, n: number): number {
         n ^= this.getByte(key);
         this.updateKeys(key, n);
 
@@ -56,7 +56,7 @@ export const ZipEncryption = {
      * @param {number} n
      * @return {number}
      */
-    encode(key: Uint32Array, n: number) {
+    encode(key: Uint32Array, n: number): number {
         var tmp = this.getByte(key);
 
         this.updateKeys(key, n);

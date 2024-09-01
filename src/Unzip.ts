@@ -225,7 +225,7 @@ export class Unzip {
         if(opts.password) this.password = typeof opts.password == 'string' ? stringToByteArray(opts.password) : (opts.password instanceof Uint8Array) ? opts.password : new Uint8Array(opts.password);
     }
 
-    searchEndOfCentralDirectoryRecord() {
+    searchEOCD() {
         var input = this.input;
 
         for (var ip = input.length - 12; ip > 0; --ip) {
@@ -240,11 +240,11 @@ export class Unzip {
         throw new Error('End of Central Directory Record not found');
     };
 
-    parseEndOfCentralDirectoryRecord() {
+    parseEOCD() {
         var input = this.input;
 
         if (!this.eocdrOffset) {
-            this.searchEndOfCentralDirectoryRecord();
+            this.searchEOCD();
         }
         var ip = this.eocdrOffset!;
 
@@ -293,7 +293,7 @@ export class Unzip {
 
         if (this.fileHeaderList) return;
 
-        if (this.centralDirectoryOffset == undefined) this.parseEndOfCentralDirectoryRecord();
+        if (this.centralDirectoryOffset == undefined) this.parseEOCD();
         var ip = this.centralDirectoryOffset!;
 
         for (var i = 0; i < this.totalEntries!; ++i) {
@@ -312,9 +312,9 @@ export class Unzip {
     /**
      * @param {number} index file header index.
      * @param {Object=} opts
-     * @return {!(Array.<number>|Uint8Array)} file data.
+     * @return {!Uint8Array} file data.
      */
-    getFileData(index: number, opts: UnzipOptions = {}) {
+    getFileData(index: number, opts: UnzipOptions = {}): Uint8Array {
         var input = this.input
         var fileHeaderList = this.fileHeaderList;
         var buffer;
@@ -387,9 +387,9 @@ export class Unzip {
     /**
      * @param {string} filename extract filename.
      * @param {Object=} opts
-     * @return {!(Array.<number>|Uint8Array)} decompressed data.
+     * @return {!Uint8Array} decompressed data.
      */
-    decompress(filename: string, opts: UnzipOptions = {}) {
+    decompress(filename: string, opts: UnzipOptions = {}): Uint8Array {
         if (!this.filenameToIndex) this.parseFileHeader();
         var index = this.filenameToIndex![filename];
 

@@ -26,11 +26,7 @@ export class BitStream {
         }
     }
 
-    /**
-     * Default Block Size.
-     * @const
-     * @type {number}
-     */
+    /** Default Block Size. */
     static DefaultBlockSize: number = 0x8000;
 
     /**

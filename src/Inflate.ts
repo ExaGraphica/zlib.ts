@@ -1,6 +1,6 @@
 import { Adler32 } from "./Adler32";
 import { BufferType, RawInflate } from "./RawInflate";
-import { DEFLATE_TOKEN } from "./Zlib";
+import { DEFLATE_TOKEN } from "./Constants";
 
 export interface InflateOptions{
     index?: number,
@@ -65,7 +65,7 @@ export class Inflate{
 
     /**
      * decompress.
-     * @return {!(Uint8Array|Array)} inflated buffer.
+     * @return {!Uint8Array} inflated buffer.
      */
     decompress() {
         var input = this.input;//input buffer.

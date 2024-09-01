@@ -1,12 +1,12 @@
 import { CRC32 } from "./CRC32";
-import { FlagsMask, GZipMagicNumber } from "./GZip";
+import { GZipFlagsMask, GZipMagicNumber } from "./GZip";
 import { RawInflate } from "./RawInflate";
 
 interface GUnzipMember{
     id1: number;//signature first byte.
     id2: number;//signature second byte.
     cm: number;//compression method.
-    flg: FlagsMask;//flags.
+    flg: GZipFlagsMask;//flags.
     mtime: Date;//modification time.
     xfl: number;//extra flags.
     os: number;//operating system number.
@@ -43,9 +43,9 @@ export class GUnzip {
 
     /**
      * inflate gzip data.
-     * @return {!(Array.<number>|Uint8Array)} inflated buffer.
+     * @return {!Uint8Array} inflated buffer.
      */
-    decompress() {
+    decompress(): Uint8Array {
         var il = this.input.length;//input length.
 
         while (this.ip < il) {
@@ -77,7 +77,7 @@ export class GUnzip {
         if(member.cm != 8) throw new Error('unknown compression method: ' + member.cm);
 
         // flags
-        var flg = input[ip++] as FlagsMask;
+        var flg = input[ip++] as GZipFlagsMask;
         member.flg = flg;
 
         // modification time
@@ -94,13 +94,13 @@ export class GUnzip {
         member.os = input[ip++];
 
         // extra
-        if ((flg & FlagsMask.FEXTRA) > 0) {
+        if ((flg & GZipFlagsMask.FEXTRA) > 0) {
             member.xlen = input[ip++] | (input[ip++] << 8);
             ip = this.decodeSubField(ip, member.xlen);
         }
 
         // fname
-        if ((flg & FlagsMask.FNAME) > 0) {
+        if ((flg & GZipFlagsMask.FNAME) > 0) {
             var str = [], c, ci = 0;
             for (; (c = input[ip++]) > 0;) {
                 str[ci++] = String.fromCharCode(c);
@@ -109,7 +109,7 @@ export class GUnzip {
         }
 
         // fcomment
-        if ((flg & FlagsMask.FCOMMENT) > 0) {
+        if ((flg & GZipFlagsMask.FCOMMENT) > 0) {
             var str = [], c, ci = 0;
             for (; (c = input[ip++]) > 0;) {
                 str[ci++] = String.fromCharCode(c);
@@ -118,25 +118,21 @@ export class GUnzip {
         }
 
         // fhcrc
-        if ((flg & FlagsMask.FHCRC) > 0) {
+        if ((flg & GZipFlagsMask.FHCRC) > 0) {
             member.crc16 = CRC32.create(input, 0, ip) & 0xffff;
             if (member.crc16 !== (input[ip++] | (input[ip++] << 8))) {
                 throw new Error('invalid header crc16');
             }
         }
 
-        // isize を事前に取得すると展開後のサイズが分かるため、
-        // inflate処理のバッファサイズが事前に分かり、高速になる
-        var isize = (input[input.length - 4]) | (input[input.length - 3] << 8) |
-            (input[input.length - 2] << 16) | (input[input.length - 1] << 24);
+        // The buffer size for inflate processing is known in advance, making it faster
+        var isize = (input[input.length - 4]) | (input[input.length - 3] << 8) | (input[input.length - 2] << 16) | (input[input.length - 1] << 24);
 
+        // Check the validity of isize
+        // In Huffman coding, the minimum is 2 bits, so the maximum is 1/4
+        // In LZ77 coding, the length and distance can be expressed in 258 bytes, so the maximum is 1/128.
+        // If the remaining input buffer size is more 512 times isize, no buffer allocation is performed.
         var inflen = undefined;
-        // isize の妥当性チェック
-        // ハフマン符号では最小 2-bit のため、最大で 1/4 になる
-        // LZ77 符号では 長さと距離 2-Byte で最大 258-Byte を表現できるため、
-        // 1/128 になるとする
-        // ここから入力バッファの残りが isize の 512 倍以上だったら
-        // サイズ指定のバッファ確保は行わない事とする
         if (input.length - ip - /* CRC-32 */4 - /* ISIZE */4 < isize * 512) {
             inflen = isize;
         }
@@ -170,8 +166,8 @@ export class GUnzip {
     }
 
     /**
-     * サブフィールドのデコード
-     * XXX: 現在は何もせずスキップする
+     * Decode Subfield
+     * >>>: Skip to do nothing for now.
      */
     decodeSubField(ip: number, length: number) {
         return ip + length;

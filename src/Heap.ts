@@ -36,8 +36,8 @@ export class Heap {
     /**
      * Add a value to Heap
      * @param {number} index key index.
-     * @param {number} value 値.
-     * @return {number} 現在のヒープ長.
+     * @param {number} value Value.
+     * @return {number} Current heap length.
      */
     push(index: number, value: number): number {
         var current, parent,

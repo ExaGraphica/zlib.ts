@@ -29,23 +29,11 @@ export enum ZipFlags{
     UTF8 = 0x0800
 };
 
-/**
- * @type {Array.<number>}
- * @const
- */
 export const FileHeaderSignature = new Uint8Array([0x50, 0x4b, 0x01, 0x02]);
 
-/**
- * @type {Array.<number>}
- * @const
- */
-export const LocalFileHeaderSignature = [0x50, 0x4b, 0x03, 0x04];
+export const LocalFileHeaderSignature = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
 
-/**
- * @type {Array.<number>}
- * @const
- */
-export const CentralDirectorySignature = [0x50, 0x4b, 0x05, 0x06];
+export const CentralDirectorySignature = new Uint8Array([0x50, 0x4b, 0x05, 0x06]);
 
 export interface FileObjectOptions{
     compressionMethod?: ZipCompressionMethod,
@@ -133,7 +121,7 @@ export class Zip {
         this.password = password;
     };
 
-    compress() {
+    compress(): Uint8Array {
         var files = this.files;
         
         var localFileSize = 0
@@ -414,9 +402,9 @@ export class Zip {
     /**
      * @param {!(Array.<number>|Uint8Array)} input
      * @param {Object=} opts options.
-     * @return {!(Array.<number>|Uint8Array)}
+     * @return {!Uint8Array}
      */
-    deflateWithOption(input: Uint8Array, opts: FileObjectOptions) {
+    deflateWithOption(input: Uint8Array, opts: FileObjectOptions): Uint8Array {
         var deflator = new RawDeflate(input, opts.deflateOptions);
 
         return deflator.compress();

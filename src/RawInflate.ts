@@ -1,33 +1,19 @@
 import { buildHuffmanTable, HuffmanTable } from "./Huffman";
-import { BlockType, DefaultInflateBufferSize, MaxBackwardLength } from "./Zlib";
+import { BlockType, DefaultInflateBufferSize, MaxBackwardLength } from "./Constants";
 
 
-/**
- * @enum {number}
- */
 export enum BufferType {
     BLOCK = 0,
     ADAPTIVE = 1
 };
 
-/**
- * @const
- * @type {number} max copy length for LZ77.
- */
+/** max copy length for LZ77. */
 const MaxCopyLength: number = 258;
 
-/**
- * huffman order
- * @const
- * @type {!Uint8Array}
- */
+/** huffman order */
 export const HuffmanOrder: Uint8Array = new Uint8Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
 
-/**
- * huffman length code table.
- * @const
- * @type {!Uint16Array}
- */
+/** huffman length code table. */
 export const LengthCodeTable: Uint16Array = new Uint16Array([
     0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000a, 0x000b,
     0x000d, 0x000f, 0x0011, 0x0013, 0x0017, 0x001b, 0x001f, 0x0023, 0x002b,
@@ -35,21 +21,13 @@ export const LengthCodeTable: Uint16Array = new Uint16Array([
     0x00e3, 0x0102, 0x0102, 0x0102
 ]);
 
-/**
- * huffman length extra-bits table.
- * @const
- * @type {!Uint8Array}
- */
+/** huffman length extra-bits table. */
 export const LengthExtraTable: Uint8Array = new Uint8Array([
     0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,
     5, 5, 0, 0, 0
 ]);
 
-/**
- * huffman dist code table.
- * @const
- * @type {!Uint16Array}
- */
+/** huffman dist code table. */
 export const DistCodeTable: Uint16Array = new Uint16Array([
     0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0007, 0x0009, 0x000d, 0x0011,
     0x0019, 0x0021, 0x0031, 0x0041, 0x0061, 0x0081, 0x00c1, 0x0101, 0x0181,
@@ -57,21 +35,13 @@ export const DistCodeTable: Uint16Array = new Uint16Array([
     0x3001, 0x4001, 0x6001
 ]);
 
-/**
- * huffman dist extra-bits table.
- * @const
- * @type {!Uint8Array}
- */
+/** huffman dist extra-bits table. */
 export const DistExtraTable: Uint8Array = new Uint8Array([
     0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11,
     11, 12, 12, 13, 13
 ]);
 
-/**
- * fixed huffman length code table
- * @const
- * @type {!HuffmanTable}
- */
+/** fixed huffman length code table */
 export const FixedLiteralLengthTable: HuffmanTable = (function () {
     var lengths = new Uint8Array(288);
     var i, il;
@@ -87,11 +57,7 @@ export const FixedLiteralLengthTable: HuffmanTable = (function () {
     return buildHuffmanTable(lengths);
 })();
 
-/**
- * fixed huffman distance code table
- * @const
- * @type {HuffmanTable}
- */
+/** fixed huffman distance code table */
 export const FixedDistanceTable: HuffmanTable = (function () {
     var lengths = new Uint8Array(30);
     var i, il;
@@ -165,9 +131,9 @@ export class RawInflate {
 
     /**
      * decompress.
-     * @return {!(Uint8Array|Array.<number>)} inflated buffer.
+     * @return {!Uint8Array} inflated buffer.
      */
-    decompress() {
+    decompress(): Uint8Array {
         while (!this.bfinal) {
             this.parseBlock();
         }
@@ -254,7 +220,7 @@ export class RawInflate {
      * @param {!HuffmanTable} table huffman code table.
      * @return {number} huffman code.
      */
-    readCodeByTable(table: HuffmanTable) {
+    readCodeByTable(table: HuffmanTable): number {
         var bitsbuf = this.bitsbuf;
         var bitsbuflen = this.bitsbuflen;
         var input = this.input;
@@ -561,9 +527,9 @@ export class RawInflate {
     /**
      * expand output buffer.
      * @param {Object=} opt_param option parameters.
-     * @return {!(Array.<number>|Uint8Array)} output buffer.
+     * @return {!Uint8Array} output buffer.
      */
-    expandBufferBlock() {
+    expandBufferBlock(): Uint8Array {
         var buffer = new Uint8Array(this.op - MaxBackwardLength);//store buffer.
         var backward = this.op - MaxBackwardLength;//backward base point
 
@@ -588,9 +554,9 @@ export class RawInflate {
     /**
      * expand output buffer. (adaptive)
      * @param {Object=} opt_param option parameters.
-     * @return {!(Array.<number>|Uint8Array)} output buffer pointer.
+     * @return {!Uint8Array} output buffer pointer.
      */
-    expandBufferAdaptive(addRatio: number = 0, fixRatio?: number) {
+    expandBufferAdaptive(addRatio: number = 0, fixRatio?: number): Uint8Array {
         var ratio = Math.floor(this.input.length / this.ip + 1);//expantion ratio.
         /** @type {number}  */
         var newSize;
@@ -626,7 +592,7 @@ export class RawInflate {
      * concat output buffer.
      * @return {!Uint8Array} output buffer.
      */
-    concatBufferBlock() {
+    concatBufferBlock(): Uint8Array {
         var pos = 0;//buffer pointer.
         var limit = this.totalpos + (this.op - MaxBackwardLength);//buffer pointer.
         var output = this.output;//output block array.

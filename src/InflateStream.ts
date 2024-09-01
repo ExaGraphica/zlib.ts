@@ -1,6 +1,6 @@
 import { Adler32 } from "./Adler32";
 import { RawInflateStream } from "./RawInflateStream";
-import { DEFLATE_TOKEN, Z_ERR } from "./Zlib";
+import { DEFLATE_TOKEN, Z_ERR } from "./Constants";
 
 export class InflateStream {
     input: Uint8Array;
@@ -21,7 +21,7 @@ export class InflateStream {
 
     /**
      * decompress.
-     * @return {!(Uint8Array|Array)} inflated buffer.
+     * @return {!Uint8Array} inflated buffer.
      */
     decompress(input: Uint8Array) {
         /** @type {number} adler-32 checksum */

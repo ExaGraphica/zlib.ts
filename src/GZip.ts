@@ -5,12 +5,11 @@
 import { CRC32 } from "./CRC32";
 import { DeflateOptions } from "./Deflate";
 import { RawDeflate } from "./RawDeflate";
-import { DefaultBufferSize } from "./Zlib";
+import { DefaultBufferSize } from "./Constants";
 
 export const GZipMagicNumber = [0x1F, 0x8B];
 
-/** @enum {number} */
-enum GZipOperatingSystem{
+export enum GZipOperatingSystem{
     FAT = 0,
     AMIGA = 1,
     VMS = 2,
@@ -28,8 +27,8 @@ enum GZipOperatingSystem{
     UNKNOWN = 255
 };
 
-/** @enum {number} */
-export enum FlagsMask{
+
+export enum GZipFlagsMask{
     FTEXT = 0x01,
     FHCRC = 0x02,
     FEXTRA = 0x04,
@@ -89,7 +88,7 @@ export class GZip {
 
     /**
      * Encode gzip members.
-     * @return {!(Array|Uint8Array)} gzip binary array.
+     * @return {!Uint8Array} gzip binary array.
      */
     compress(): Uint8Array {
         var output = new Uint8Array(DefaultBufferSize);//output buffer
@@ -105,15 +104,15 @@ export class GZip {
         output[op++] = GZipMagicNumber[1];
 
         // check compression method
-        output[op++] = 8; /* XXX: use Zlib const */
+        output[op++] = 8; /* use Zlib const */
 
         // flags
         var flg = 0;
-        if (this.flags.fname) flg |= FlagsMask.FNAME;
-        if (this.flags.fcomment) flg |= FlagsMask.FCOMMENT;
-        if (this.flags.fhcrc) flg |= FlagsMask.FHCRC;
-        // XXX: FTEXT
-        // XXX: FEXTRA
+        if (this.flags.fname) flg |= GZipFlagsMask.FNAME;
+        if (this.flags.fcomment) flg |= GZipFlagsMask.FCOMMENT;
+        if (this.flags.fhcrc) flg |= GZipFlagsMask.FHCRC;
+        // >>>: FTEXT
+        // >>>: FEXTRA
         output[op++] = flg;
 
         // modification time

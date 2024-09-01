@@ -1,13 +1,10 @@
 
 //-----------------------------------------------------------------------------
 
-import { BlockType, DefaultInflateBufferSize, MaxBackwardLength, Z_ERR } from "./Zlib";
+import { BlockType, DefaultInflateBufferSize, MaxBackwardLength, Z_ERR, Z_OK, Z_STATUS } from "./Constants";
 import { DistCodeTable, DistExtraTable, FixedDistanceTable, FixedLiteralLengthTable, HuffmanOrder, LengthCodeTable, LengthExtraTable } from "./RawInflate";
 import { buildHuffmanTable, HuffmanTable } from "./Huffman";
 
-/**
- * @enum {number}
- */
 enum InflateStreamStatus {
     INITIALIZED = 0,
     BLOCK_HEADER_START = 1,
@@ -124,7 +121,7 @@ export class RawInflateStream {
 
 
     /** parse deflated block */
-    readBlockHeader() {
+    readBlockHeader(): Z_STATUS {
         var header: number;
 
         this.status = InflateStreamStatus.BLOCK_HEADER_START;
@@ -158,6 +155,8 @@ export class RawInflateStream {
         }
 
         this.status = InflateStreamStatus.BLOCK_HEADER_END;
+
+        return Z_OK;
     };
 
     /**
@@ -249,7 +248,7 @@ export class RawInflateStream {
     /**
      * read uncompressed block header
      */
-    readUncompressedBlockHeader() {
+    readUncompressedBlockHeader(): Z_STATUS {
         var len: number;//block length
         var nlen: number;//number for check block length
 
@@ -277,10 +276,12 @@ export class RawInflateStream {
         this.ip = ip;
         this.blockLength = len;
         this.status = InflateStreamStatus.BLOCK_BODY_END;
+
+        return Z_OK;
     };
 
     /** parse uncompressed block. */
-    parseUncompressedBlock() {
+    parseUncompressedBlock(): Z_STATUS {
         var input = this.input;
         var ip = this.ip;
         var output = this.output;
@@ -290,7 +291,7 @@ export class RawInflateStream {
         this.status = InflateStreamStatus.DECODE_BLOCK_START;
 
         // copy
-        // XXX: For now, just copy
+        // >>>: For now, just copy
         while (len--) {
             if (op === output.length) {
                 output = this.expandBuffer(0, 2);
@@ -313,6 +314,8 @@ export class RawInflateStream {
 
         this.ip = ip;
         this.op = op;
+
+        return Z_OK;
     };
 
     /** parse fixed huffman block. */
@@ -346,7 +349,7 @@ export class RawInflateStream {
     };
 
     /** parse dynamic huffman block.*/
-    parseDynamicHuffmanBlock() {
+    parseDynamicHuffmanBlock(): Z_STATUS {
         var codeLengths = new Uint8Array(HuffmanOrder.length);//code lengths.
 
         var litlenLengths: Uint8Array;//literal and length code lengths.
@@ -422,14 +425,14 @@ export class RawInflateStream {
 
         this.status = InflateStreamStatus.BLOCK_BODY_END;
 
-        return 0;
+        return Z_OK;
     }
 
     /**
      * decode huffman code (dynamic)
-     * @return {(number|undefined)} -1 is error.
+     * @return {Z_STATUS} -1 is error.
      */
-    decodeHuffman() {
+    decodeHuffman(): Z_STATUS {
         var output = this.output,
             op = this.op;
 
@@ -521,6 +524,8 @@ export class RawInflateStream {
 
         this.op = op;
         this.status = InflateStreamStatus.DECODE_BLOCK_END;
+
+        return Z_OK;
     };
 
     /**
