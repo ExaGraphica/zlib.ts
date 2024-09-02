@@ -1,6 +1,7 @@
 import { Adler32 } from "./Adler32.js";
 import { RawInflate } from "./RawInflate.js";
 import { DEFLATE_TOKEN } from "./Constants.js";
+import { ByteStream } from "./ByteStream.js";
 export class Inflate {
     /**
      * @constructor
@@ -52,11 +53,11 @@ export class Inflate {
         var buffer; //inflated buffer.
         buffer = this.rawinflate.decompress();
         this.ip = this.rawinflate.ip;
+        var b = new ByteStream(buffer, this.ip);
         // verify adler-32
         if (this.verify) {
             //adler-32 checksum
-            var adler32 = (input[this.ip++] << 24 | input[this.ip++] << 16 |
-                input[this.ip++] << 8 | input[this.ip++]) >>> 0;
+            var adler32 = b.readUintBE();
             if (adler32 !== Adler32.create(buffer)) {
                 throw new Error('invalid adler-32 checksum');
             }

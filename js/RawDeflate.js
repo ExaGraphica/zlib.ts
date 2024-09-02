@@ -1,7 +1,7 @@
 /**
  * @fileoverview Deflate (RFC 1951) Encoding algorithm implementation
  */
-import { BitStream } from "./Bitstream.js";
+import { BitStream } from "./BitStream.js";
 import { Heap } from "./Heap.js";
 import { HuffmanOrder } from "./RawInflate.js";
 import { DefaultDeflateBufferSize } from "./Constants.js";
@@ -170,19 +170,16 @@ export class LZ77Match {
      * @return {!Array<number>} LZ77 array.
      */
     toLZ77Array() {
-        var codeArray = [];
-        var pos = 0;
-        // length
-        var code1 = LZ77Match.LengthCodeTable[this.length];
-        codeArray[pos++] = code1 & 0xffff;
-        codeArray[pos++] = (code1 >> 16) & 0xff;
-        codeArray[pos++] = code1 >> 24;
-        // distance
-        var code2 = this.getDistanceCode(this.backwardDistance);
-        codeArray[pos++] = code2[0];
-        codeArray[pos++] = code2[1];
-        codeArray[pos++] = code2[2];
-        return codeArray;
+        var code1 = LZ77Match.LengthCodeTable[this.length]; // length
+        var code2 = this.getDistanceCode(this.backwardDistance); // distance
+        return [
+            code1 & 0xFFFF,
+            (code1 >>> 16) & 0xFF,
+            code1 >>> 24,
+            code2[0],
+            code2[1],
+            code2[2]
+        ];
     }
 }
 /**
@@ -336,7 +333,7 @@ export class RawDeflate {
             case CompressionType.NONE:
                 // each 65535-Byte (length header: 16-bit)
                 for (var position = 0, length = input.length; position < length;) {
-                    var blockArray = input.subarray(position, position + 0xffff);
+                    var blockArray = input.subarray(position, position + 0xFFFF);
                     position += blockArray.length;
                     this.makeNocompressBlock(blockArray, (position === length));
                 }
@@ -375,11 +372,11 @@ export class RawDeflate {
         output[op++] = (isFinalBlock ? 1 : 0) | (btype << 1);
         // length
         var len = blockArray.length;
-        var nlen = (~len + 0x10000) & 0xffff;
-        output[op++] = len & 0xff;
-        output[op++] = (len >>> 8) & 0xff;
-        output[op++] = nlen & 0xff;
-        output[op++] = (nlen >>> 8) & 0xff;
+        var nlen = (~len + 0x10000) & 0xFFFF;
+        output[op++] = len & 0xFF;
+        output[op++] = (len >>> 8) & 0xFF;
+        output[op++] = nlen & 0xFF;
+        output[op++] = (nlen >>> 8) & 0xFF;
         // copy buffer
         output.set(blockArray, op);
         op += blockArray.length;
@@ -474,8 +471,8 @@ export class RawDeflate {
      * @param {!(Array<number>|Uint16Array)} dataArray LZ77-Encoded byte array.
      * @param {Array<Uint16Array, Uint8Array>} litLen Literals/lengths [codes, lengths] tuple
      * @param {Array<Uint16Array,Uint8Array>} dist Distance [codes, lengths] tuple
-     * @param {!BitStream} stream Write to Bitstream.
-     * @return {!BitStream} Huffman encoded Bitstream object.
+     * @param {!BitStream} stream Write to BitStream.
+     * @return {!BitStream} Huffman encoded BitStream object.
      */
     dynamicHuffman(dataArray, litLen, dist, stream) {
         var litLenCodes = litLen[0];
@@ -513,7 +510,7 @@ export class RawDeflate {
      * @return {!BitStream} Huffman-encoded BitStream object.
      */
     fixedHuffman(dataArray, stream) {
-        // Write the code to the Bitstream.
+        // Write the code to the BitStream.
         for (var index = 0; index < dataArray.length; index++) {
             var literal = dataArray[index];
             // Write the code

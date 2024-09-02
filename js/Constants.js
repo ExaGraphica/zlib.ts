@@ -4,6 +4,8 @@ export const DefaultBufferSize = 0x8000;
 export const DefaultDeflateBufferSize = 0x8000;
 /** Default buffer block size. */
 export const DefaultInflateBufferSize = 0x8000;
+/** Default Block Size. */
+export const DefaultBlockSize = 0x8000;
 export const MaxBackwardLength = 32768;
 export const Z_OK = 1;
 export const Z_ERR = -1;

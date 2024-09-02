@@ -36,24 +36,21 @@ export const DistExtraTable = new Uint8Array([
 ]);
 /** fixed huffman length code table */
 export const FixedLiteralLengthTable = (function () {
-    var lengths = new Uint8Array(288);
-    var i, il;
-    for (i = 0, il = lengths.length; i < il; ++i) {
-        lengths[i] =
-            (i <= 143) ? 8 :
-                (i <= 255) ? 9 :
-                    (i <= 279) ? 7 :
-                        8;
-    }
+    var lengths = new Uint8Array(288).map((_, i) => {
+        if (i <= 143)
+            return 8;
+        else if (i <= 255)
+            return 9;
+        else if (i <= 279)
+            return 7;
+        else
+            return 8;
+    });
     return buildHuffmanTable(lengths);
 })();
 /** fixed huffman distance code table */
 export const FixedDistanceTable = (function () {
-    var lengths = new Uint8Array(30);
-    var i, il;
-    for (i = 0, il = lengths.length; i < il; ++i) {
-        lengths[i] = 5;
-    }
+    var lengths = new Uint8Array(30).map(n => 5);
     return buildHuffmanTable(lengths);
 })();
 export class RawInflate {
@@ -207,7 +204,7 @@ export class RawInflate {
         this.bitsbuf = bitsbuf >> codeLength;
         this.bitsbuflen = bitsbuflen - codeLength;
         this.ip = ip;
-        return codeWithLength & 0xffff;
+        return codeWithLength & 0xFFFF;
     }
     /**
      * parse uncompressed block.

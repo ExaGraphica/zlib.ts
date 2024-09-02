@@ -16,7 +16,7 @@ export const ZipEncryption = {
     updateKeys(key, n) {
         key[0] = CRC32.single(key[0], n);
         key[1] =
-            (((((key[1] + (key[0] & 0xff)) * 20173 >>> 0) * 6681) >>> 0) + 1) >>> 0;
+            (((((key[1] + (key[0] & 0xFF)) * 20173 >>> 0) * 6681) >>> 0) + 1) >>> 0;
         key[2] = CRC32.single(key[2], key[1] >>> 24);
     },
     /**
@@ -28,7 +28,7 @@ export const ZipEncryption = {
             password = stringToByteArray(password);
         var key = new Uint32Array([305419896, 591751049, 878082192]);
         for (var i = 0; i < password.length; ++i) {
-            this.updateKeys(key, password[i] & 0xff);
+            this.updateKeys(key, password[i] & 0xFF);
         }
         return key;
     },

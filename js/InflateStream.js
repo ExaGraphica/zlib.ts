@@ -1,15 +1,16 @@
 import { Adler32 } from "./Adler32.js";
 import { RawInflateStream } from "./RawInflateStream.js";
-import { DEFLATE_TOKEN, Z_ERR } from "./Constants.js";
+import { DEFLATE_TOKEN, Z_ERR, Z_OK } from "./Constants.js";
+import { ByteStream } from "./ByteStream.js";
 export class InflateStream {
     /**
      * @param {!(Uint8Array|Array)} input deflated buffer.
      * @constructor
      */
-    constructor(input) {
-        this.ip = 0;
+    constructor(input, ip = 0) {
         this.verify = true;
         this.input = input;
+        this.ip = ip;
         this.rawinflate = new RawInflateStream(this.input, this.ip);
         this.output = this.rawinflate.output;
     }
@@ -19,8 +20,6 @@ export class InflateStream {
      * @return {!Uint8Array} inflated buffer.
      */
     decompress(input) {
-        /** @type {number} adler-32 checksum */
-        var adler32;
         // Attaching a new input to the input buffer;
         if (input) {
             var tmp = new Uint8Array(this.input.length + input.length);
@@ -36,10 +35,10 @@ export class InflateStream {
             this.input = this.input.subarray(this.rawinflate.ip);
             this.ip = 0;
         }
+        var b = new ByteStream(input, this.ip);
         // Verify adler-32
         if (this.verify) {
-            adler32 = input[this.ip++] << 24 | input[this.ip++] << 16
-                | input[this.ip++] << 8 | input[this.ip++];
+            var adler32 = b.readUintBE();
             if (adler32 !== Adler32.create(buffer)) {
                 throw new Error('invalid adler-32 checksum');
             }
@@ -67,5 +66,6 @@ export class InflateStream {
             throw new Error('fdict flag is not supported');
         }
         this.ip = ip;
+        return Z_OK;
     }
 }

@@ -1,13 +1,24 @@
 {
   "inputs": {
     "src/CRC32.ts": {
-      "bytes": 5545,
+      "bytes": 2378,
       "imports": [],
       "format": "esm"
     },
-    "src/Bitstream.ts": {
-      "bytes": 4343,
+    "src/Constants.ts": {
+      "bytes": 510,
       "imports": [],
+      "format": "esm"
+    },
+    "src/BitStream.ts": {
+      "bytes": 4245,
+      "imports": [
+        {
+          "path": "src/Constants.ts",
+          "kind": "import-statement",
+          "original": "Constants"
+        }
+      ],
       "format": "esm"
     },
     "src/Heap.ts": {
@@ -20,13 +31,8 @@
       "imports": [],
       "format": "esm"
     },
-    "src/Constants.ts": {
-      "bytes": 442,
-      "imports": [],
-      "format": "esm"
-    },
     "src/RawInflate.ts": {
-      "bytes": 20027,
+      "bytes": 19869,
       "imports": [
         {
           "path": "src/Huffman.ts",
@@ -42,12 +48,12 @@
       "format": "esm"
     },
     "src/RawDeflate.ts": {
-      "bytes": 33644,
+      "bytes": 34412,
       "imports": [
         {
-          "path": "src/Bitstream.ts",
+          "path": "src/BitStream.ts",
           "kind": "import-statement",
-          "original": "./Bitstream"
+          "original": "./BitStream"
         },
         {
           "path": "src/Heap.ts",
@@ -67,8 +73,24 @@
       ],
       "format": "esm"
     },
+    "src/Util.ts": {
+      "bytes": 263,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ByteStream.ts": {
+      "bytes": 2584,
+      "imports": [
+        {
+          "path": "src/Util.ts",
+          "kind": "import-statement",
+          "original": "Util"
+        }
+      ],
+      "format": "esm"
+    },
     "src/GZip.ts": {
-      "bytes": 5284,
+      "bytes": 4991,
       "imports": [
         {
           "path": "src/CRC32.ts",
@@ -89,13 +111,23 @@
           "path": "src/Constants.ts",
           "kind": "import-statement",
           "original": "./Constants"
+        },
+        {
+          "path": "src/ByteStream.ts",
+          "kind": "import-statement",
+          "original": "ByteStream"
         }
       ],
       "format": "esm"
     },
     "src/GUnzip.ts": {
-      "bytes": 5861,
+      "bytes": 5587,
       "imports": [
+        {
+          "path": "src/ByteStream.ts",
+          "kind": "import-statement",
+          "original": "ByteStream"
+        },
         {
           "path": "src/CRC32.ts",
           "kind": "import-statement",
@@ -112,11 +144,6 @@
           "original": "./RawInflate"
         }
       ],
-      "format": "esm"
-    },
-    "src/Util.ts": {
-      "bytes": 263,
-      "imports": [],
       "format": "esm"
     },
     "src/ZipEncryption.ts": {
@@ -136,8 +163,13 @@
       "format": "esm"
     },
     "src/Zip.ts": {
-      "bytes": 13715,
+      "bytes": 11671,
       "imports": [
+        {
+          "path": "src/ByteStream.ts",
+          "kind": "import-statement",
+          "original": "ByteStream"
+        },
         {
           "path": "src/CRC32.ts",
           "kind": "import-statement",
@@ -162,7 +194,7 @@
       "format": "esm"
     },
     "src/Unzip.ts": {
-      "bytes": 12530,
+      "bytes": 10822,
       "imports": [
         {
           "path": "src/CRC32.ts",
@@ -188,6 +220,11 @@
           "path": "src/ZipEncryption.ts",
           "kind": "import-statement",
           "original": "./ZipEncryption"
+        },
+        {
+          "path": "src/ByteStream.ts",
+          "kind": "import-statement",
+          "original": "ByteStream"
         }
       ],
       "format": "esm"
@@ -204,7 +241,7 @@
       "format": "esm"
     },
     "src/Deflate.ts": {
-      "bytes": 3090,
+      "bytes": 3038,
       "imports": [
         {
           "path": "src/Adler32.ts",
@@ -220,12 +257,17 @@
           "path": "src/Constants.ts",
           "kind": "import-statement",
           "original": "./Constants"
+        },
+        {
+          "path": "src/ByteStream.ts",
+          "kind": "import-statement",
+          "original": "ByteStream"
         }
       ],
       "format": "esm"
     },
     "src/Inflate.ts": {
-      "bytes": 2535,
+      "bytes": 2493,
       "imports": [
         {
           "path": "src/Adler32.ts",
@@ -241,6 +283,11 @@
           "path": "src/Constants.ts",
           "kind": "import-statement",
           "original": "./Constants"
+        },
+        {
+          "path": "src/ByteStream.ts",
+          "kind": "import-statement",
+          "original": "ByteStream"
         }
       ],
       "format": "esm"
@@ -289,10 +336,13 @@
       "entryPoint": "src/index.ts",
       "inputs": {
         "src/CRC32.ts": {
-          "bytesInOutput": 7079
+          "bytesInOutput": 1909
         },
-        "src/Bitstream.ts": {
-          "bytesInOutput": 3341
+        "src/Constants.ts": {
+          "bytesInOutput": 203
+        },
+        "src/BitStream.ts": {
+          "bytesInOutput": 3124
         },
         "src/Heap.ts": {
           "bytesInOutput": 2530
@@ -300,47 +350,47 @@
         "src/Huffman.ts": {
           "bytesInOutput": 1133
         },
-        "src/Constants.ts": {
-          "bytesInOutput": 171
-        },
         "src/RawInflate.ts": {
-          "bytesInOutput": 15755
+          "bytesInOutput": 15678
         },
         "src/RawDeflate.ts": {
-          "bytesInOutput": 27211
-        },
-        "src/GZip.ts": {
-          "bytesInOutput": 3416
-        },
-        "src/GUnzip.ts": {
-          "bytesInOutput": 3884
+          "bytesInOutput": 27065
         },
         "src/Util.ts": {
           "bytesInOutput": 190
+        },
+        "src/ByteStream.ts": {
+          "bytesInOutput": 2023
+        },
+        "src/GZip.ts": {
+          "bytesInOutput": 2874
+        },
+        "src/GUnzip.ts": {
+          "bytesInOutput": 3670
         },
         "src/ZipEncryption.ts": {
           "bytesInOutput": 1384
         },
         "src/Zip.ts": {
-          "bytesInOutput": 8814
+          "bytesInOutput": 6728
         },
         "src/Unzip.ts": {
-          "bytesInOutput": 8360
+          "bytesInOutput": 7130
         },
         "src/Adler32.ts": {
           "bytesInOutput": 1226
         },
         "src/Deflate.ts": {
-          "bytesInOutput": 1965
+          "bytesInOutput": 1888
         },
         "src/Inflate.ts": {
-          "bytesInOutput": 1736
+          "bytesInOutput": 1699
         },
         "src/index.ts": {
           "bytesInOutput": 109
         }
       },
-      "bytes": 88685
+      "bytes": 80968
     }
   }
 }

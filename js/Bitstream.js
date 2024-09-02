@@ -1,17 +1,18 @@
 /**
  * @fileoverview Bit Stream Implementation.
  */
+import { DefaultBlockSize } from "./Constants.js";
 export class BitStream {
     /**
-     * Bitstream
+     * BitStream
      * @constructor
-     * @param {(Array|Uint8Array)=} buffer output buffer.
+     * @param {Uint8Array=} buffer output buffer.
      * @param {number=} bufferPosition start buffer pointer.
      */
     constructor(buffer, bufferPosition = 0) {
         this.bitindex = 0; //bit index
+        this.buffer = buffer instanceof Uint8Array ? buffer : new Uint8Array(DefaultBlockSize);
         this.index = bufferPosition;
-        this.buffer = buffer instanceof Uint8Array ? buffer : new Uint8Array(BitStream.DefaultBlockSize);
         // If the input index is outside the input buffer, we can double it.
         // Anything outside the doubled buffer length is invalid, though.
         if (this.buffer.length * 2 <= this.index) {
@@ -107,21 +108,18 @@ export class BitStream {
         return output;
     }
     ;
-}
-/** Default Block Size. */
-BitStream.DefaultBlockSize = 0x8000;
-BitStream.ReverseTable = (function () {
-    var table = new Uint8Array(256);
-    // generate
-    for (var i = 0; i < 256; ++i) {
-        var r = i;
-        var s = 7;
-        for (i >>>= 1; i; i >>>= 1) {
-            r <<= 1;
-            r |= i & 1;
-            --s;
-        }
-        table[i] = (r << s & 0xff);
+    static init() {
+        this.ReverseTable = new Uint8Array(256).map((_, i) => {
+            var r = i;
+            var s = 7;
+            for (i >>>= 1; i; i >>>= 1) {
+                r <<= 1;
+                r |= i & 1;
+                --s;
+            }
+            return (r << s & 0xFF);
+        });
     }
-    return table;
-})(); //Reverse table IIFE
+}
+BitStream.init();
+//

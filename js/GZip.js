@@ -4,7 +4,8 @@
 import { CRC32 } from "./CRC32.js";
 import { RawDeflate } from "./RawDeflate.js";
 import { DefaultBufferSize } from "./Constants.js";
-export const GZipMagicNumber = [0x1F, 0x8B];
+import { ByteStream } from "./ByteStream.js";
+export const GZipMagicNumber = new Uint8Array([0x1F, 0x8B]);
 export var GZipOperatingSystem;
 (function (GZipOperatingSystem) {
     GZipOperatingSystem[GZipOperatingSystem["FAT"] = 0] = "FAT";
@@ -68,16 +69,15 @@ export class GZip {
      */
     compress() {
         var output = new Uint8Array(DefaultBufferSize); //output buffer
-        var op = 0; //output buffer pointer
+        var b = new ByteStream(output, 0);
         var input = this.input;
         var ip = this.ip;
         var filename = this.filename;
         var comment = this.comment;
         // check signature
-        output[op++] = GZipMagicNumber[0];
-        output[op++] = GZipMagicNumber[1];
+        b.writeArray(GZipMagicNumber);
         // check compression method
-        output[op++] = 8; /* use Zlib const */
+        b.writeByte(8); /* use Zlib const */
         // flags
         var flg = 0;
         if (this.flags.fname)
@@ -88,74 +88,65 @@ export class GZip {
             flg |= GZipFlagsMask.FHCRC;
         // >>>: FTEXT
         // >>>: FEXTRA
-        output[op++] = flg;
+        b.writeByte(flg);
         // modification time
         var mtime = Math.floor(Date.now() / 1000);
-        output[op++] = mtime & 0xff;
-        output[op++] = mtime >>> 8 & 0xff;
-        output[op++] = mtime >>> 16 & 0xff;
-        output[op++] = mtime >>> 24 & 0xff;
+        b.writeUint(mtime);
         // extra flags
-        output[op++] = 0;
+        b.writeByte(0);
         // operating system
-        output[op++] = GZipOperatingSystem.UNIX; // Default is Unix.
+        b.writeByte(GZipOperatingSystem.UNIX); // Default is Unix.
         // no extra
         // fname
         if (this.flags.fname) {
-            for (var i = 0; i < comment.length; ++i) {
+            for (var i = 0; i < filename.length; ++i) {
                 var c = filename.charCodeAt(i);
-                if (c > 0xff) {
-                    output[op++] = (c >>> 8) & 0xff;
-                }
-                output[op++] = c & 0xff;
+                if (c > 0xFF)
+                    b.writeShort(c);
+                else
+                    b.writeByte(c);
             }
-            output[op++] = 0; // null termination
+            b.writeByte(0); // null termination
         }
         // fcomment
         if (this.flags.fcomment) {
             for (var i = 0; i < comment.length; ++i) {
                 var c = comment.charCodeAt(i);
-                if (c > 0xff) {
-                    output[op++] = (c >>> 8) & 0xff;
-                }
-                output[op++] = c & 0xff;
+                if (c > 0xFF)
+                    b.writeShort(c);
+                else
+                    b.writeByte(c);
             }
-            output[op++] = 0; // null termination
+            b.writeByte(0); // null termination
         }
         // fhcrc
         if (this.flags.fhcrc) {
-            var crc16 = CRC32.create(output, 0, op) & 0xffff;
-            output[op++] = (crc16) & 0xff;
-            output[op++] = (crc16 >>> 8) & 0xff;
+            var crc16 = CRC32.create(output, 0, b.p) & 0xFFFF;
+            b.writeShort(crc16);
         }
         // add compress option
         this.deflateOptions.outputBuffer = output;
-        this.deflateOptions.outputIndex = op;
+        this.deflateOptions.outputIndex = b.p;
         // compress
         var rawdeflate = new RawDeflate(input, this.deflateOptions);
         output = rawdeflate.compress();
-        op = rawdeflate.op;
+        var op = rawdeflate.op;
         // expand buffer
-        if (op + 8 > output.buffer.byteLength) {
+        if (op + 8 > output.length) {
             this.output = new Uint8Array(op + 8);
             this.output.set(new Uint8Array(output.buffer));
             output = this.output;
         }
         else {
-            output = new Uint8Array(output.buffer);
+            //output = new Uint8Array(output.buffer);
         }
+        var b = new ByteStream(output, op);
         // crc32
         var crc32 = CRC32.create(input);
-        output[op++] = (crc32) & 0xff;
-        output[op++] = (crc32 >>> 8) & 0xff;
-        output[op++] = (crc32 >>> 16) & 0xff;
-        output[op++] = (crc32 >>> 24) & 0xff;
+        b.writeUint(crc32);
         // input size
         var il = input.length;
-        output[op++] = (il) & 0xff;
-        output[op++] = (il >>> 8) & 0xff;
-        output[op++] = (il >>> 16) & 0xff;
-        output[op++] = (il >>> 24) & 0xff;
+        b.writeUint(il);
         this.ip = ip;
         if (op < output.length) {
             this.output = output = output.subarray(0, op);
