@@ -47,6 +47,21 @@ export class ByteStream{
         this.buffer[this.p++] = (uint >>> 16) & 0xFF;
         this.buffer[this.p++] = (uint >>> 24) & 0xFF;
     }
+
+    readUintBE(){
+        return (
+            (this.buffer[this.p++] << 24)
+            | (this.buffer[this.p++] << 16)
+            | (this.buffer[this.p++] << 8)
+            | (this.buffer[this.p++])
+        ) >>> 0;//uint32 fix for JS
+    }
+    writeUintBE(uint: number){
+        this.buffer[this.p++] = (uint >>> 24) & 0xFF;
+        this.buffer[this.p++] = (uint >>> 16) & 0xFF;
+        this.buffer[this.p++] = (uint >>> 8) & 0xFF;
+        this.buffer[this.p++] = (uint) & 0xFF;
+    }
     
     readArray(len: number){
         return this.buffer.subarray(this.p, (this.p += len));

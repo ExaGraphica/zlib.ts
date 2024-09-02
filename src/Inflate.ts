@@ -79,7 +79,7 @@ export class Inflate{
         // verify adler-32
         if (this.verify) {
             //adler-32 checksum
-            var adler32 = b.readUint();
+            var adler32 = b.readUintBE();
 
             if (adler32 !== Adler32.create(buffer)) {
                 throw new Error('invalid adler-32 checksum');

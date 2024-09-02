@@ -95,7 +95,7 @@ export class Deflate {
         b = new ByteStream(output, pos);
 
         // adler32
-        b.writeUint(adler);
+        b.writeUintBE(adler);
 
         return output;
     }
