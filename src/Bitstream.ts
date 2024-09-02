@@ -8,7 +8,7 @@ export class BitStream {
     buffer: Uint8Array;
     bitindex: number = 0;//bit index
     index: number;
-    
+
     /**
      * BitStream
      * @constructor
@@ -129,10 +129,10 @@ export class BitStream {
         return output;
     };
 
-    static ReverseTable = (function () {
-        var table = new Uint8Array(256);
-        // generate
-        for (var i = 0; i < 256; ++i) {
+    static ReverseTable: Uint8Array;
+
+    static init(){
+        this.ReverseTable = new Uint8Array(256).map((_,i) => {
             var r = i;
             var s = 7;
 
@@ -142,9 +142,10 @@ export class BitStream {
                 --s;
             }
 
-            table[i] = (r << s & 0xff)
-        }
-
-        return table;
-    })();//Reverse table IIFE
+            return (r << s & 0xff);
+        });
+    }
 }
+
+BitStream.init();
+//
