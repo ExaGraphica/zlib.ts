@@ -6,6 +6,7 @@
 import { Adler32 } from "./Adler32";
 import { RawDeflateOptions, CompressionType, RawDeflate } from "./RawDeflate";
 import { DefaultBufferSize, DEFLATE_TOKEN } from "./Constants";
+import { ByteStream } from "ByteStream";
 
 export interface DeflateOptions extends RawDeflateOptions{
     compressionType?: CompressionType
@@ -55,15 +56,15 @@ export class Deflate {
      * @return {!Uint8Array} compressed data byte array.
      */
     compress(): Uint8Array {
-        var output: Uint8Array = this.output;;
-        var pos: number = 0;
+        var output: Uint8Array = this.output;
+        var b = new ByteStream(output, 0);
 
         // Compression Method and Flags
 
         //cinfo = Math.LOG2E * Math.log(WindowSize) - 8;
         var cinfo = 7;
         var cmf = (cinfo << 4) | DEFLATE_TOKEN;
-        output[pos++] = cmf;
+        b.writeByte(cmf);
 
         // Flags
         var fdict = 0;
@@ -72,14 +73,14 @@ export class Deflate {
         var flg = (flevel << 6) | (fdict << 5);
         var fcheck = 31 - (cmf * 256 + flg) % 31;
         flg |= fcheck;
-        output[pos++] = flg;
+        b.writeByte(flg);
 
         // Adler-32 checksum
         var adler = Adler32.create(this.input);
         
-        this.rawDeflate.op = pos;
+        this.rawDeflate.op = b.p;
         output = this.rawDeflate.compress();
-        pos = output.length;
+        var pos = output.length;
 
         // subarray 分を元にもどす
         output = new Uint8Array(output.buffer);
@@ -91,11 +92,10 @@ export class Deflate {
         }
         output = output.subarray(0, pos + 4);
 
+        b = new ByteStream(output, pos);
+
         // adler32
-        output[pos++] = (adler >> 24) & 0xff;
-        output[pos++] = (adler >> 16) & 0xff;
-        output[pos++] = (adler >> 8) & 0xff;
-        output[pos++] = (adler) & 0xff;
+        b.writeUint(adler);
 
         return output;
     }
