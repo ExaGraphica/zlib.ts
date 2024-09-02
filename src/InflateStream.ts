@@ -1,6 +1,6 @@
 import { Adler32 } from "./Adler32";
 import { RawInflateStream } from "./RawInflateStream";
-import { DEFLATE_TOKEN, Z_ERR } from "./Constants";
+import { DEFLATE_TOKEN, Z_ERR, Z_OK, Z_STATUS } from "./Constants";
 
 export class InflateStream {
     input: Uint8Array;
@@ -58,7 +58,7 @@ export class InflateStream {
         return buffer;
     }
 
-    readHeader() {
+    readHeader(): Z_STATUS {
         var ip = this.ip;
         var input = this.input;
 
@@ -84,5 +84,7 @@ export class InflateStream {
         }
 
         this.ip = ip;
+
+        return Z_OK;
     }
 }
