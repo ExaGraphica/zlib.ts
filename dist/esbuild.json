@@ -1,0 +1,346 @@
+{
+  "inputs": {
+    "src/CRC32.ts": {
+      "bytes": 5545,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/Bitstream.ts": {
+      "bytes": 4343,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/Heap.ts": {
+      "bytes": 3541,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/Huffman.ts": {
+      "bytes": 2422,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/Constants.ts": {
+      "bytes": 442,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/RawInflate.ts": {
+      "bytes": 20027,
+      "imports": [
+        {
+          "path": "src/Huffman.ts",
+          "kind": "import-statement",
+          "original": "./Huffman"
+        },
+        {
+          "path": "src/Constants.ts",
+          "kind": "import-statement",
+          "original": "./Constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/RawDeflate.ts": {
+      "bytes": 33644,
+      "imports": [
+        {
+          "path": "src/Bitstream.ts",
+          "kind": "import-statement",
+          "original": "./Bitstream"
+        },
+        {
+          "path": "src/Heap.ts",
+          "kind": "import-statement",
+          "original": "./Heap"
+        },
+        {
+          "path": "src/RawInflate.ts",
+          "kind": "import-statement",
+          "original": "./RawInflate"
+        },
+        {
+          "path": "src/Constants.ts",
+          "kind": "import-statement",
+          "original": "./Constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/GZip.ts": {
+      "bytes": 5284,
+      "imports": [
+        {
+          "path": "src/CRC32.ts",
+          "kind": "import-statement",
+          "original": "./CRC32"
+        },
+        {
+          "path": "./Deflate",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/RawDeflate.ts",
+          "kind": "import-statement",
+          "original": "./RawDeflate"
+        },
+        {
+          "path": "src/Constants.ts",
+          "kind": "import-statement",
+          "original": "./Constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/GUnzip.ts": {
+      "bytes": 5861,
+      "imports": [
+        {
+          "path": "src/CRC32.ts",
+          "kind": "import-statement",
+          "original": "./CRC32"
+        },
+        {
+          "path": "src/GZip.ts",
+          "kind": "import-statement",
+          "original": "./GZip"
+        },
+        {
+          "path": "src/RawInflate.ts",
+          "kind": "import-statement",
+          "original": "./RawInflate"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/Util.ts": {
+      "bytes": 263,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ZipEncryption.ts": {
+      "bytes": 1762,
+      "imports": [
+        {
+          "path": "src/CRC32.ts",
+          "kind": "import-statement",
+          "original": "./CRC32"
+        },
+        {
+          "path": "src/Util.ts",
+          "kind": "import-statement",
+          "original": "./Util"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/Zip.ts": {
+      "bytes": 13715,
+      "imports": [
+        {
+          "path": "src/CRC32.ts",
+          "kind": "import-statement",
+          "original": "./CRC32"
+        },
+        {
+          "path": "src/RawDeflate.ts",
+          "kind": "import-statement",
+          "original": "./RawDeflate"
+        },
+        {
+          "path": "src/Util.ts",
+          "kind": "import-statement",
+          "original": "./Util"
+        },
+        {
+          "path": "src/ZipEncryption.ts",
+          "kind": "import-statement",
+          "original": "./ZipEncryption"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/Unzip.ts": {
+      "bytes": 12530,
+      "imports": [
+        {
+          "path": "src/CRC32.ts",
+          "kind": "import-statement",
+          "original": "./CRC32"
+        },
+        {
+          "path": "src/RawInflate.ts",
+          "kind": "import-statement",
+          "original": "./RawInflate"
+        },
+        {
+          "path": "src/Util.ts",
+          "kind": "import-statement",
+          "original": "./Util"
+        },
+        {
+          "path": "src/Zip.ts",
+          "kind": "import-statement",
+          "original": "./Zip"
+        },
+        {
+          "path": "src/ZipEncryption.ts",
+          "kind": "import-statement",
+          "original": "./ZipEncryption"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/Adler32.ts": {
+      "bytes": 1582,
+      "imports": [
+        {
+          "path": "src/Util.ts",
+          "kind": "import-statement",
+          "original": "./Util"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/Deflate.ts": {
+      "bytes": 3090,
+      "imports": [
+        {
+          "path": "src/Adler32.ts",
+          "kind": "import-statement",
+          "original": "./Adler32"
+        },
+        {
+          "path": "src/RawDeflate.ts",
+          "kind": "import-statement",
+          "original": "./RawDeflate"
+        },
+        {
+          "path": "src/Constants.ts",
+          "kind": "import-statement",
+          "original": "./Constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/Inflate.ts": {
+      "bytes": 2535,
+      "imports": [
+        {
+          "path": "src/Adler32.ts",
+          "kind": "import-statement",
+          "original": "./Adler32"
+        },
+        {
+          "path": "src/RawInflate.ts",
+          "kind": "import-statement",
+          "original": "./RawInflate"
+        },
+        {
+          "path": "src/Constants.ts",
+          "kind": "import-statement",
+          "original": "./Constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 287,
+      "imports": [
+        {
+          "path": "src/GZip.ts",
+          "kind": "import-statement",
+          "original": "GZip"
+        },
+        {
+          "path": "src/GUnzip.ts",
+          "kind": "import-statement",
+          "original": "GUnzip"
+        },
+        {
+          "path": "src/Zip.ts",
+          "kind": "import-statement",
+          "original": "Zip"
+        },
+        {
+          "path": "src/Unzip.ts",
+          "kind": "import-statement",
+          "original": "Unzip"
+        },
+        {
+          "path": "src/Deflate.ts",
+          "kind": "import-statement",
+          "original": "Deflate"
+        },
+        {
+          "path": "src/Inflate.ts",
+          "kind": "import-statement",
+          "original": "Inflate"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/Zlib-main.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/CRC32.ts": {
+          "bytesInOutput": 7079
+        },
+        "src/Bitstream.ts": {
+          "bytesInOutput": 3341
+        },
+        "src/Heap.ts": {
+          "bytesInOutput": 2530
+        },
+        "src/Huffman.ts": {
+          "bytesInOutput": 1133
+        },
+        "src/Constants.ts": {
+          "bytesInOutput": 171
+        },
+        "src/RawInflate.ts": {
+          "bytesInOutput": 15755
+        },
+        "src/RawDeflate.ts": {
+          "bytesInOutput": 27211
+        },
+        "src/GZip.ts": {
+          "bytesInOutput": 3416
+        },
+        "src/GUnzip.ts": {
+          "bytesInOutput": 3884
+        },
+        "src/Util.ts": {
+          "bytesInOutput": 190
+        },
+        "src/ZipEncryption.ts": {
+          "bytesInOutput": 1384
+        },
+        "src/Zip.ts": {
+          "bytesInOutput": 8814
+        },
+        "src/Unzip.ts": {
+          "bytesInOutput": 8360
+        },
+        "src/Adler32.ts": {
+          "bytesInOutput": 1226
+        },
+        "src/Deflate.ts": {
+          "bytesInOutput": 1965
+        },
+        "src/Inflate.ts": {
+          "bytesInOutput": 1736
+        },
+        "src/index.ts": {
+          "bytesInOutput": 109
+        }
+      },
+      "bytes": 88685
+    }
+  }
+}

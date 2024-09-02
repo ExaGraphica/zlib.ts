@@ -16,7 +16,7 @@
         "minifyMain": "npx esbuild dist/Zlib-main.js --minify --outfile=dist/Zlib-main.min.js",
         "minify": "npm run minifyZip && npm run minifyGZip && npm run minifyDeflate && npm rum minifyMain",
 
-        "compile": "npx tsc; npx tsc-alias"
+        "compile": "npx tsc && npx tsc-alias"
     },
     "repository": {
         "type": "git",
@@ -31,6 +31,7 @@
     "dependencies": {},
     "devDependencies": {
         "typescript": "^5.5.0",
+        "tsc-alias": "^1.8.10",
         "esbuild": "^0.23.1"
     },
     "author": "ExaGraphica",
