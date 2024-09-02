@@ -2,7 +2,7 @@
  * @fileoverview Deflate (RFC 1951) Encoding algorithm implementation
  */
 
-import { BitStream } from "./Bitstream";
+import { BitStream } from "./BitStream";
 import { Heap } from "./Heap";
 import { HuffmanOrder } from "./RawInflate";
 import { DefaultDeflateBufferSize } from "./Constants";
@@ -175,22 +175,16 @@ export class LZ77Match {
      * @return {!Array<number>} LZ77 array.
      */
     toLZ77Array(): number[] {
-        var codeArray: number[] = [];
-        var pos: number = 0;
-
-        // length
-        var code1 = LZ77Match.LengthCodeTable[this.length];
-        codeArray[pos++] = code1 & 0xffff;
-        codeArray[pos++] = (code1 >> 16) & 0xff;
-        codeArray[pos++] = code1 >> 24;
-
-        // distance
-        var code2 = this.getDistanceCode(this.backwardDistance);
-        codeArray[pos++] = code2[0];
-        codeArray[pos++] = code2[1];
-        codeArray[pos++] = code2[2];
-
-        return codeArray;
+        var code1 = LZ77Match.LengthCodeTable[this.length];// length
+        var code2 = this.getDistanceCode(this.backwardDistance);// distance
+        return [
+            code1 & 0xFFFF,
+            (code1 >>> 16) & 0xFF,
+            code1 >>> 24,
+            code2[0],
+            code2[1],
+            code2[2]
+        ];
     }
 }
 
@@ -411,8 +405,8 @@ export class RawDeflate{
      * @param {!(Array<number>|Uint16Array)} dataArray LZ77-Encoded byte array.
      * @param {Array<Uint16Array, Uint8Array>} litLen Literals/lengths [codes, lengths] tuple
      * @param {Array<Uint16Array,Uint8Array>} dist Distance [codes, lengths] tuple
-     * @param {!BitStream} stream Write to Bitstream.
-     * @return {!BitStream} Huffman encoded Bitstream object.
+     * @param {!BitStream} stream Write to BitStream.
+     * @return {!BitStream} Huffman encoded BitStream object.
      */
     dynamicHuffman(
         dataArray: number[] | Uint16Array, 
@@ -459,7 +453,7 @@ export class RawDeflate{
      * @return {!BitStream} Huffman-encoded BitStream object.
      */
     fixedHuffman(dataArray: Uint16Array, stream: BitStream): BitStream {
-        // Write the code to the Bitstream.
+        // Write the code to the BitStream.
         for (var index = 0; index < dataArray.length; index++) {
             var literal = dataArray[index];
 

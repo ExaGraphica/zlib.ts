@@ -1,3 +1,4 @@
+import { ByteStream } from "ByteStream";
 import { CRC32 } from "./CRC32";
 import { RawDeflate, RawDeflateOptions } from "./RawDeflate";
 import { stringToByteArray } from "./Util";
@@ -59,7 +60,7 @@ export interface FileObject{
 
 export class Zip {
     files: FileObject[] = [];
-    comment: number[] | Uint8Array;
+    comment: Uint8Array;
     password: number[] | Uint8Array | string | null = null;
 
     /**
@@ -67,7 +68,7 @@ export class Zip {
      * @constructor
      */
     constructor(comment: number[] | Uint8Array = []){
-        this.comment = comment;
+        this.comment = comment instanceof Uint8Array ? comment : new Uint8Array(comment);
     }
 
 
@@ -182,209 +183,179 @@ export class Zip {
             localFileSize + centralDirectorySize + endOfCentralDirectorySize
         );
 
-        var op1 = 0;
-        var op2 = localFileSize;
-        var op3 = op2 + centralDirectorySize;
-
+        var b1 = new ByteStream(output, 0);
+        var b2 = new ByteStream(output, localFileSize);
+        
         // Compress Files
         for (i = 0; i < files.length; ++i) {
             var file = files[i];
             var filenameLength = file.filename.length;
             var extraFieldLength = 0; // TODO
             var commentLength = file.option.comment ? file.option.comment.length : 0;
-
-            //-------------------------------------------------------------------------
+            
             // local file header & file header
-            //-------------------------------------------------------------------------
 
-            var offset = op1;
+            var offset = b1.p;
 
             // signature
             // local file header
-            output[op1++] = LocalFileHeaderSignature[0];
-            output[op1++] = LocalFileHeaderSignature[1];
-            output[op1++] = LocalFileHeaderSignature[2];
-            output[op1++] = LocalFileHeaderSignature[3];
+            // output[op1++] = LocalFileHeaderSignature[0];
+            // output[op1++] = LocalFileHeaderSignature[1];
+            // output[op1++] = LocalFileHeaderSignature[2];
+            // output[op1++] = LocalFileHeaderSignature[3];
+            b1.writeArray(LocalFileHeaderSignature)
             // file header
-            output[op2++] = FileHeaderSignature[0];
-            output[op2++] = FileHeaderSignature[1];
-            output[op2++] = FileHeaderSignature[2];
-            output[op2++] = FileHeaderSignature[3];
-
+            // output[op2++] = FileHeaderSignature[0];
+            // output[op2++] = FileHeaderSignature[1];
+            // output[op2++] = FileHeaderSignature[2];
+            // output[op2++] = FileHeaderSignature[3];
+            b2.writeArray(FileHeaderSignature);
+            
             // compressor info
             var needVersion = 20;
-            output[op2++] = needVersion & 0xff;
-            output[op2++] = (file.option.os) ?? ZipOperatingSystem.MSDOS;
-
+            b2.writeByte(needVersion & 0xff);
+            b2.writeByte((file.option.os) ?? ZipOperatingSystem.MSDOS);
+            
             // need version
-            output[op1++] = output[op2++] = needVersion & 0xff;
-            output[op1++] = output[op2++] = (needVersion >> 8) & 0xff;
-
+            b1.writeWord(needVersion);
+            b2.writeWord(needVersion);
+            
             // general purpose bit flag
             var flags = 0;
             if (file.option.password != undefined || this.password != undefined) {
                 flags |= ZipFlags.ENCRYPT;
             }
-            output[op1++] = output[op2++] = flags & 0xff;
-            output[op1++] = output[op2++] = (flags >> 8) & 0xff;
-
+            b1.writeWord(flags);
+            b2.writeWord(flags);
+            
             // compression method
             var compressionMethod = file.compressionMethod;
-            output[op1++] = output[op2++] = compressionMethod & 0xff;
-            output[op1++] = output[op2++] = (compressionMethod >> 8) & 0xff;
-
+            b1.writeWord(compressionMethod);
+            b2.writeWord(compressionMethod);
+            
             // date
             var date = file.option.date ?? new Date();
-            output[op1++] = output[op2++] =
+            var mtime = new Uint8Array([
                 ((date.getMinutes() & 0x7) << 5) |
-                (date.getSeconds() / 2 | 0);
-            output[op1++] = output[op2++] =
+                (date.getSeconds() >>> 1),
                 (date.getHours() << 3) |
-                (date.getMinutes() >> 3);
-            //
-            output[op1++] = output[op2++] =
+                (date.getMinutes() >> 3),
                 ((date.getMonth() + 1 & 0x7) << 5) |
-                (date.getDate());
-            output[op1++] = output[op2++] =
+                (date.getDate()),
                 ((date.getFullYear() - 1980 & 0x7f) << 1) |
-                (date.getMonth() + 1 >> 3);
-
+                (date.getMonth() + 1 >> 3)
+            ]);
+            
+            b1.writeArray(mtime);
+            b2.writeArray(mtime);
+            
+            
             // CRC-32
-            var crc32 = file.crc32!;
-            output[op1++] = output[op2++] = crc32 & 0xff;
-            output[op1++] = output[op2++] = (crc32 >> 8) & 0xff;
-            output[op1++] = output[op2++] = (crc32 >> 16) & 0xff;
-            output[op1++] = output[op2++] = (crc32 >> 24) & 0xff;
-
+            var crc32 = file.crc32;
+            b1.writeUint(crc32);
+            b2.writeUint(crc32);
+            
             // compressed size
             var size = file.buffer.length;
-            output[op1++] = output[op2++] = size & 0xff;
-            output[op1++] = output[op2++] = (size >> 8) & 0xff;
-            output[op1++] = output[op2++] = (size >> 16) & 0xff;
-            output[op1++] = output[op2++] = (size >> 24) & 0xff;
-
+            b1.writeUint(size);
+            b2.writeUint(size);
+            
             // uncompressed size
             var plainSize = file.size;
-            output[op1++] = output[op2++] = plainSize & 0xff;
-            output[op1++] = output[op2++] = (plainSize >> 8) & 0xff;
-            output[op1++] = output[op2++] = (plainSize >> 16) & 0xff;
-            output[op1++] = output[op2++] = (plainSize >> 24) & 0xff;
-
+            b1.writeUint(plainSize);
+            b2.writeUint(plainSize);
+            
             // filename length
-            output[op1++] = output[op2++] = filenameLength & 0xff;
-            output[op1++] = output[op2++] = (filenameLength >> 8) & 0xff;
-
+            b1.writeWord(filenameLength);
+            b2.writeWord(filenameLength);
+            
             // extra field length
-            output[op1++] = output[op2++] = extraFieldLength & 0xff;
-            output[op1++] = output[op2++] = (extraFieldLength >> 8) & 0xff;
-
+            b1.writeWord(extraFieldLength);
+            b2.writeWord(extraFieldLength);
+            
             // file comment length
-            output[op2++] = commentLength & 0xff;
-            output[op2++] = (commentLength >> 8) & 0xff;
-
+            b2.writeWord(commentLength);
+            
             // disk number start
-            output[op2++] = 0;
-            output[op2++] = 0;
-
+            b2.writeByte(0);
+            b2.writeByte(0);
+            
             // internal file attributes
-            output[op2++] = 0;
-            output[op2++] = 0;
-
+            b2.writeByte(0);
+            b2.writeByte(0);
+            
             // external file attributes
-            output[op2++] = 0;
-            output[op2++] = 0;
-            output[op2++] = 0;
-            output[op2++] = 0;
-
+            b2.writeByte(0);
+            b2.writeByte(0);
+            b2.writeByte(0);
+            b2.writeByte(0);
+            
             // relative offset of local header
-            output[op2++] = offset & 0xff;
-            output[op2++] = (offset >> 8) & 0xff;
-            output[op2++] = (offset >> 16) & 0xff;
-            output[op2++] = (offset >> 24) & 0xff;
-
+            b2.writeUint(offset);
+            
             // filename
             var filename = file.filename;
             if (filename) {
                 var filenameArr = stringToByteArray(filename);
-                output.set(filenameArr, op1);
-                output.set(filenameArr, op2);
-                op1 += filenameLength;
-                op2 += filenameLength;
+                b1.writeArray(filenameArr);
+                b2.writeArray(filenameArr);
             }
-
+            
             // extra field
             var extraField = file.option.extraField;
             if (extraField) {
-                output.set(extraField, op1);
-                output.set(extraField, op2);
-                op1 += extraFieldLength;
-                op2 += extraFieldLength;
+                b1.writeArray(extraField);
+                b2.writeArray(extraField);
             }
-
+            
             // comment
             var comment = file.option.comment;
             if (comment) {
                 var commentArr = stringToByteArray(comment);
-                output.set(commentArr, op2);
-                op2 += commentLength;
+                b2.writeArray(commentArr);
             }
-
-            //-------------------------------------------------------------------------
-            // file data
-            //-------------------------------------------------------------------------
-
-            output.set(file.buffer, op1);
-            op1 += file.buffer.length;
             
+            // file data
+            
+            b1.writeArray(file.buffer);
         }
-
-        //-------------------------------------------------------------------------
+        
         // end of central directory
-        //-------------------------------------------------------------------------
 
+        var b3 = new ByteStream(output, localFileSize + centralDirectorySize);
+        //var op3 = localFileSize + centralDirectorySize;
+
+        
         // signature
-        output[op3++] = CentralDirectorySignature[0];
-        output[op3++] = CentralDirectorySignature[1];
-        output[op3++] = CentralDirectorySignature[2];
-        output[op3++] = CentralDirectorySignature[3];
+        b3.writeArray(CentralDirectorySignature);
 
         // number of this disk
-        output[op3++] = 0;
-        output[op3++] = 0;
+        b3.writeByte(0);
+        b3.writeByte(0);
 
         // number of the disk with the start of the central directory
-        output[op3++] = 0;
-        output[op3++] = 0;
+        b3.writeByte(0);
+        b3.writeByte(0);
 
         // total number of entries in the central directory on this disk
-        output[op3++] = files.length & 0xff;
-        output[op3++] = (files.length >> 8) & 0xff;
+        b3.writeWord(files.length);
 
         // total number of entries in the central directory
-        output[op3++] = files.length & 0xff;
-        output[op3++] = (files.length >> 8) & 0xff;
+        b3.writeWord(files.length);
 
         // size of the central directory
-        output[op3++] = centralDirectorySize & 0xff;
-        output[op3++] = (centralDirectorySize >> 8) & 0xff;
-        output[op3++] = (centralDirectorySize >> 16) & 0xff;
-        output[op3++] = (centralDirectorySize >> 24) & 0xff;
+        b3.writeUint(centralDirectorySize);
 
         // offset of start of central directory with respect to the starting disk number
-        output[op3++] = localFileSize & 0xff;
-        output[op3++] = (localFileSize >> 8) & 0xff;
-        output[op3++] = (localFileSize >> 16) & 0xff;
-        output[op3++] = (localFileSize >> 24) & 0xff;
+        b3.writeUint(localFileSize);
 
         // .ZIP file comment length
         commentLength = this.comment ? this.comment.length : 0;
-        output[op3++] = commentLength & 0xff;
-        output[op3++] = (commentLength >> 8) & 0xff;
+        b3.writeWord(commentLength);
 
         // .ZIP file comment
         if (this.comment) {
-            output.set(this.comment, op3);
-            op3 += commentLength;
+            b3.writeArray(this.comment);
         }
 
         return output;

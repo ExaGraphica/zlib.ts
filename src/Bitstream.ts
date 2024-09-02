@@ -2,20 +2,22 @@
  * @fileoverview Bit Stream Implementation.
  */
 
-export class BitStream {
-    index: number;
-    bitindex: number = 0;//bit index
-    buffer: Uint8Array;
+import { DefaultBlockSize } from "Constants";
 
+export class BitStream {
+    buffer: Uint8Array;
+    bitindex: number = 0;//bit index
+    index: number;
+    
     /**
-     * Bitstream
+     * BitStream
      * @constructor
-     * @param {(Array|Uint8Array)=} buffer output buffer.
+     * @param {Uint8Array=} buffer output buffer.
      * @param {number=} bufferPosition start buffer pointer.
      */
     constructor(buffer?: Uint8Array, bufferPosition: number = 0) {
+        this.buffer = buffer instanceof Uint8Array ? buffer : new Uint8Array(DefaultBlockSize);
         this.index = bufferPosition;
-        this.buffer = buffer instanceof Uint8Array ? buffer : new Uint8Array(BitStream.DefaultBlockSize);
 
         // If the input index is outside the input buffer, we can double it.
         // Anything outside the doubled buffer length is invalid, though.
@@ -25,9 +27,6 @@ export class BitStream {
             this.expandBuffer();
         }
     }
-
-    /** Default Block Size. */
-    static DefaultBlockSize: number = 0x8000;
 
     /**
      * Expand buffer.
