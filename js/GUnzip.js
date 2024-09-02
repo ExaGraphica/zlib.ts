@@ -44,7 +44,7 @@ export class GUnzip {
         member.id1 = b.readByte(),
             member.id2 = b.readByte();
         // check signature
-        if (member.id1 !== GZipMagicNumber[0] || member.id2 !== GZipMagicNumber[2]) {
+        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[1])) {
             throw new Error('invalid file signature:' + member.id1 + ',' + member.id2);
         }
         // check compression method
@@ -118,6 +118,7 @@ export class GUnzip {
                 CRC32.create(inflated).toString(16) + ' / 0x' + crc32.toString(16));
         }
         // input size
+        b.p = input.length - 4;
         var isize = b.readUint();
         if ((inflated.length & 0xFFFFFFFF) !== isize) {
             throw new Error('invalid input size: ' +

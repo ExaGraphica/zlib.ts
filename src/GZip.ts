@@ -166,7 +166,7 @@ export class GZip {
         // expand buffer
         if (op + 8 > output.length) {
             this.output = new Uint8Array(op + 8);
-            this.output.set(new Uint8Array(output.buffer));
+            this.output.set(new Uint8Array(output));
             output = this.output;
         } else {
             //output = new Uint8Array(output.buffer);
@@ -184,7 +184,7 @@ export class GZip {
 
         this.ip = ip;
 
-        if (op < output.length) {
+        if (b.p < output.length) {
             this.output = output = output.subarray(0, op);
         }
 

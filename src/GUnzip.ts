@@ -69,7 +69,7 @@ export class GUnzip {
         member.id2 = b.readByte();
 
         // check signature
-        if (member.id1 !== GZipMagicNumber[0] || member.id2 !== GZipMagicNumber[2]) {
+        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[2])) {
             throw new Error('invalid file signature:' + member.id1 + ',' + member.id2);
         }
 
@@ -92,13 +92,13 @@ export class GUnzip {
         member.os = b.readByte();
 
         // extra
-        if ((flg & GZipFlagsMask.FEXTRA) > 0) {
+        if (Boolean(flg & GZipFlagsMask.FEXTRA)) {
             member.xlen = b.readShort();
             b.p = this.decodeSubField(b.p, member.xlen);
         }
 
         // fname
-        if ((flg & GZipFlagsMask.FNAME) > 0) {
+        if (Boolean(flg & GZipFlagsMask.FNAME)) {
             var str = '', c = 1;
             while (c != 0) {
                 c = b.readByte();
@@ -109,7 +109,7 @@ export class GUnzip {
         }
 
         // fcomment
-        if ((flg & GZipFlagsMask.FCOMMENT) > 0) {
+        if (Boolean(flg & GZipFlagsMask.FCOMMENT)) {
             var str = '', c = 1;
             while (c != 0) {
                 c = b.readByte();
@@ -128,6 +128,7 @@ export class GUnzip {
         }
 
         // The buffer size for inflate processing is known in advance, making it faster
+        b.p = input.length - 4;
         var isize = b.readUint();
 
         // Check the validity of isize

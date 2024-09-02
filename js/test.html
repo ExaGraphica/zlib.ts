@@ -1,0 +1,10 @@
+<script>
+    function download(arr){
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([arr]));
+        a.download = 'zipped.gz';
+        document.body.appendChild(a);
+        a.click();
+    }
+</script>
+<script type="module" src="./index.js"></script>

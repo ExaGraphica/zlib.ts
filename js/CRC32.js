@@ -39,7 +39,7 @@ export const CRC32 = {
             crc = (crc >>> 8) ^ table[(crc ^ data[pos + 6]) & 0xFF];
             crc = (crc >>> 8) ^ table[(crc ^ data[pos + 7]) & 0xFF];
         }
-        return crc ^ 0xFFFFFFFF;
+        return (crc ^ 0xFFFFFFFF) >>> 0;
     },
     /**
      * @param {number} num
