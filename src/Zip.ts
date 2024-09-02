@@ -153,7 +153,7 @@ export class Zip {
                 for (j = 0; j < 12; ++j) {
                     buffer[j] = ZipEncryption.encode(
                         key,
-                        i === 11 ? (file.crc32! & 0xff) : (Math.random() * 256 | 0)
+                        i === 11 ? (file.crc32! & 0xFF) : (Math.random() * 256 | 0)
                     );
                 }
 
@@ -213,7 +213,7 @@ export class Zip {
             
             // compressor info
             var needVersion = 20;
-            b2.writeByte(needVersion & 0xff);
+            b2.writeByte(needVersion & 0xFF);
             b2.writeByte((file.option.os) ?? ZipOperatingSystem.MSDOS);
             
             // need version

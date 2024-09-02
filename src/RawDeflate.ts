@@ -243,7 +243,7 @@ export class RawDeflate{
             case CompressionType.NONE:
                 // each 65535-Byte (length header: 16-bit)
                 for (var position = 0, length = input.length; position < length;) {
-                    var blockArray = input.subarray(position, position + 0xffff);
+                    var blockArray = input.subarray(position, position + 0xFFFF);
                     position += blockArray.length;
                     this.makeNocompressBlock(blockArray, (position === length));
                 }
@@ -286,11 +286,11 @@ export class RawDeflate{
 
         // length
         var len = blockArray.length;
-        var nlen = (~len + 0x10000) & 0xffff;
-        output[op++] = len & 0xff;
-        output[op++] = (len >>> 8) & 0xff;
-        output[op++] = nlen & 0xff;
-        output[op++] = (nlen >>> 8) & 0xff;
+        var nlen = (~len + 0x10000) & 0xFFFF;
+        output[op++] = len & 0xFF;
+        output[op++] = (len >>> 8) & 0xFF;
+        output[op++] = nlen & 0xFF;
+        output[op++] = (nlen >>> 8) & 0xFF;
 
         // copy buffer
         output.set(blockArray, op);

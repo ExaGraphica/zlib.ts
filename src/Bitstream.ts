@@ -142,7 +142,7 @@ export class BitStream {
                 --s;
             }
 
-            return (r << s & 0xff);
+            return (r << s & 0xFF);
         });
     }
 }

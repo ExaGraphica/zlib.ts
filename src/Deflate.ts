@@ -71,7 +71,7 @@ export class Deflate {
         var flevel = this.compressionType as number;
 
         var flg = (flevel << 6) | (fdict << 5);
-        var fcheck = 31 - (cmf * 256 + flg) % 31;
+        var fcheck = 31 - ((cmf << 8) + flg) % 31;
         flg |= fcheck;
         b.writeByte(flg);
 

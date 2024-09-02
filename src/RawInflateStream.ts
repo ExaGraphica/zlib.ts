@@ -242,7 +242,7 @@ export class RawInflateStream {
         this.bitsbuflen = bitsbuflen - codeLength;
         this.ip = ip;
 
-        return codeWithLength & 0xffff;
+        return codeWithLength & 0xFFFF;
     };
 
     /**

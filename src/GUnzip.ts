@@ -121,7 +121,7 @@ export class GUnzip {
 
         // fhcrc
         if ((flg & GZipFlagsMask.FHCRC) > 0) {
-            member.crc16 = CRC32.create(input, 0, b.p) & 0xffff;
+            member.crc16 = CRC32.create(input, 0, b.p) & 0xFFFF;
             if (member.crc16 !== b.readWord()) {
                 throw new Error('invalid header crc16');
             }
@@ -156,9 +156,9 @@ export class GUnzip {
 
         // input size
         var isize = b.readUint();
-        if ((inflated.length & 0xffffffff) !== isize) {
+        if ((inflated.length & 0xFFFFFFFF) !== isize) {
             throw new Error('invalid input size: ' +
-                (inflated.length & 0xffffffff) + ' / ' + isize);
+                (inflated.length & 0xFFFFFFFF) + ' / ' + isize);
         }
 
         this.member.push(member as GUnzipMember);

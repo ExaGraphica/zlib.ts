@@ -141,7 +141,7 @@ export class GZip {
         if (this.flags.fcomment) {
             for (var i = 0; i < comment.length; ++i) {
                 var c = comment.charCodeAt(i);
-                if (c > 0xff) b.writeWord(c);
+                if (c > 0xFF) b.writeWord(c);
                 else b.writeByte(c);
             }
             b.writeByte(0); // null termination
