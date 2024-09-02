@@ -4,6 +4,19 @@
     "description": "Imaya's zlib.js ported to Typescript. Compact Deflate/Inflate, GZip, PKZIP Library",
     "main": "index.ts",
     "scripts": {
+        "buildZip": "npx esbuild src/index-zip.ts --bundle --outfile=dist/Zlib-zip.js",
+        "buildGZip": "npx esbuild src/index-gzip.ts --bundle --outfile=dist/Zlib-gzip.js",
+        "buildDeflate": "npx esbuild src/index-deflate.ts --bundle --outfile=dist/Zlib-deflate.js",
+        "buildMain": "npx esbuild src/index.ts --bundle --metafile=dist/esbuild.json --outfile=dist/Zlib-main.js",
+        "build": "npm run buildZip && npm run buildGZip && npm run buildDeflate && npm run buildMain",
+
+        "minifyZip": "npx esbuild dist/Zlib-zip.js --minify --outfile=dist/Zlib-zip.min.js",
+        "minifyGZip": "npx esbuild dist/Zlib-gzip.js --minify --outfile=dist/Zlib-gzip.min.js",
+        "minifyDeflate": "npx esbuild dist/Zlib-deflate.js --minify --outfile=dist/Zlib-deflate.min.js",
+        "minifyMain": "npx esbuild dist/Zlib-main.js --minify --outfile=dist/Zlib-main.min.js",
+        "minify": "npm run minifyZip && npm run minifyGZip && npm run minifyDeflate && npm rum minifyMain",
+
+        "compile": "npx tsc; npx tsc-alias"
     },
     "repository": {
         "type": "git",
@@ -18,8 +31,7 @@
     "dependencies": {},
     "devDependencies": {
         "typescript": "^5.5.0",
-        "esbuild": "^0.23.1",
-        "eslint": "^9.9.1"
+        "esbuild": "^0.23.1"
     },
     "author": "ExaGraphica",
     "license": "MIT",
