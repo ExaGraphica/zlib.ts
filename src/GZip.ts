@@ -131,7 +131,7 @@ export class GZip {
         if (this.flags.fname) {
             for (var i = 0; i < filename.length; ++i) {
                 var c = filename.charCodeAt(i);
-                if (c > 0xFF) b.writeWord(c);
+                if (c > 0xFF) b.writeShort(c);
                 else b.writeByte(c);
             }
             b.writeByte(0); // null termination
@@ -141,7 +141,7 @@ export class GZip {
         if (this.flags.fcomment) {
             for (var i = 0; i < comment.length; ++i) {
                 var c = comment.charCodeAt(i);
-                if (c > 0xFF) b.writeWord(c);
+                if (c > 0xFF) b.writeShort(c);
                 else b.writeByte(c);
             }
             b.writeByte(0); // null termination
@@ -150,7 +150,7 @@ export class GZip {
         // fhcrc
         if (this.flags.fhcrc) {
             var crc16 = CRC32.create(output, 0, b.p) & 0xFFFF;
-            b.writeWord(crc16);
+            b.writeShort(crc16);
         }
 
         // add compress option

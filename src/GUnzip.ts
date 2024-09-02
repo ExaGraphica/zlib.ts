@@ -93,7 +93,7 @@ export class GUnzip {
 
         // extra
         if ((flg & GZipFlagsMask.FEXTRA) > 0) {
-            member.xlen = b.readWord();
+            member.xlen = b.readShort();
             b.p = this.decodeSubField(b.p, member.xlen);
         }
 
@@ -122,7 +122,7 @@ export class GUnzip {
         // fhcrc
         if ((flg & GZipFlagsMask.FHCRC) > 0) {
             member.crc16 = CRC32.create(input, 0, b.p) & 0xFFFF;
-            if (member.crc16 !== b.readWord()) {
+            if (member.crc16 !== b.readShort()) {
                 throw new Error('invalid header crc16');
             }
         }

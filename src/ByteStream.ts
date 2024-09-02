@@ -24,11 +24,11 @@ export class ByteStream{
         this.buffer[this.p++] = byte;
     }
 
-    readWord(){
+    readShort(){
         return this.buffer[this.p++]
             | (this.buffer[this.p++] << 8);
     }
-    writeWord(short: number){
+    writeShort(short: number){
         this.buffer[this.p++] = short & 0xFF;
         this.buffer[this.p++] = (short >>> 8) & 0xFF;
     }

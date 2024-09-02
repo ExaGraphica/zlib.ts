@@ -217,21 +217,21 @@ export class Zip {
             b2.writeByte((file.option.os) ?? ZipOperatingSystem.MSDOS);
             
             // need version
-            b1.writeWord(needVersion);
-            b2.writeWord(needVersion);
+            b1.writeShort(needVersion);
+            b2.writeShort(needVersion);
             
             // general purpose bit flag
             var flags = 0;
             if (file.option.password != undefined || this.password != undefined) {
                 flags |= ZipFlags.ENCRYPT;
             }
-            b1.writeWord(flags);
-            b2.writeWord(flags);
+            b1.writeShort(flags);
+            b2.writeShort(flags);
             
             // compression method
             var compressionMethod = file.compressionMethod;
-            b1.writeWord(compressionMethod);
-            b2.writeWord(compressionMethod);
+            b1.writeShort(compressionMethod);
+            b2.writeShort(compressionMethod);
             
             // date
             var date = file.option.date ?? new Date();
@@ -266,15 +266,15 @@ export class Zip {
             b2.writeUint(plainSize);
             
             // filename length
-            b1.writeWord(filenameLength);
-            b2.writeWord(filenameLength);
+            b1.writeShort(filenameLength);
+            b2.writeShort(filenameLength);
             
             // extra field length
-            b1.writeWord(extraFieldLength);
-            b2.writeWord(extraFieldLength);
+            b1.writeShort(extraFieldLength);
+            b2.writeShort(extraFieldLength);
             
             // file comment length
-            b2.writeWord(commentLength);
+            b2.writeShort(commentLength);
             
             // disk number start
             b2.writeByte(0);
@@ -338,10 +338,10 @@ export class Zip {
         b3.writeByte(0);
 
         // total number of entries in the central directory on this disk
-        b3.writeWord(files.length);
+        b3.writeShort(files.length);
 
         // total number of entries in the central directory
-        b3.writeWord(files.length);
+        b3.writeShort(files.length);
 
         // size of the central directory
         b3.writeUint(centralDirectorySize);
@@ -351,7 +351,7 @@ export class Zip {
 
         // .ZIP file comment length
         commentLength = this.comment ? this.comment.length : 0;
-        b3.writeWord(commentLength);
+        b3.writeShort(commentLength);
 
         // .ZIP file comment
         if (this.comment) {

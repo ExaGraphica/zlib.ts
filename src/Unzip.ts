@@ -40,17 +40,17 @@ function parseLocalFileHeader(b: ByteStream): LocalFileHeader {
     }
 
     
-    fh.needVersion = b.readWord();// version needed to extract
-    fh.flags = b.readWord();// general purpose bit flag
-    fh.compression = b.readWord();// compression method
-    fh.time = b.readWord();// last mod file time
-    fh.date = b.readWord();//last mod file date
+    fh.needVersion = b.readShort();// version needed to extract
+    fh.flags = b.readShort();// general purpose bit flag
+    fh.compression = b.readShort();// compression method
+    fh.time = b.readShort();// last mod file time
+    fh.date = b.readShort();//last mod file date
     fh.crc32 = b.readUint();// crc-32
     fh.compressedSize = b.readUint();// compressed size
     fh.plainSize = b.readUint();// uncompressed size
 
-    fh.fileNameLength = b.readWord();// file name length
-    fh.extraFieldLength = b.readWord();// extra field length
+    fh.fileNameLength = b.readShort();// file name length
+    fh.extraFieldLength = b.readShort();// extra field length
 
     
     fh.filename = b.readString(fh.fileNameLength);// file name
@@ -94,27 +94,27 @@ function parseFileHeader(b: ByteStream): FileHeader {
     fh.os = b.readByte();
 
     
-    fh.needVersion = b.readWord();// version needed to extract
+    fh.needVersion = b.readShort();// version needed to extract
 
     
-    fh.flags = b.readWord();// general purpose bit flag
-    fh.compression = b.readWord();// compression method
-    fh.time = b.readWord();// last mod file time
-    fh.date = b.readWord();//last mod file date
+    fh.flags = b.readShort();// general purpose bit flag
+    fh.compression = b.readShort();// compression method
+    fh.time = b.readShort();// last mod file time
+    fh.date = b.readShort();//last mod file date
     fh.crc32 = b.readUint();// crc-32
 
     fh.compressedSize = b.readUint();// compressed size
     fh.plainSize = b.readUint();// uncompressed size
 
     
-    fh.fileNameLength = b.readWord();// file name length
-    fh.extraFieldLength = b.readWord();// extra field length
-    fh.fileCommentLength = b.readWord();// file comment length
+    fh.fileNameLength = b.readShort();// file name length
+    fh.extraFieldLength = b.readShort();// extra field length
+    fh.fileCommentLength = b.readShort();// file comment length
 
     
-    fh.diskNumberStart = b.readWord();// disk number start
+    fh.diskNumberStart = b.readShort();// disk number start
 
-    fh.internalFileAttributes = b.readWord();// internal file attributes
+    fh.internalFileAttributes = b.readShort();// internal file attributes
     fh.externalFileAttributes = b.readUint();// external file attributes
 
     // relative offset of local header
@@ -173,15 +173,15 @@ function parseEOCD(input: Uint8Array) {
         b.readByte() !== CentralDirectorySignature[3]
     ) throw new Error('invalid signature');
 
-    EOCD.numberOfThisDisk = b.readWord();
+    EOCD.numberOfThisDisk = b.readShort();
 
     
-    EOCD.startDisk = b.readWord();
-    EOCD.totalEntriesThisDisk = b.readWord();
-    EOCD.totalEntries = b.readWord();
+    EOCD.startDisk = b.readShort();
+    EOCD.totalEntriesThisDisk = b.readShort();
+    EOCD.totalEntries = b.readShort();
     EOCD.centralDirectorySize = b.readUint();
     EOCD.centralDirectoryOffset = b.readUint();
-    EOCD.commentLength = b.readWord();
+    EOCD.commentLength = b.readShort();
     EOCD.comment = b.readArray(EOCD.commentLength);
 
     return EOCD as EOCD;
