@@ -268,8 +268,9 @@ export class Unzip {
             
             // encryption header
             for (var i = offset; i < offset + 12; ++i) {
-                ZipCrypto.decode(key, input[i]);
+                ZipCrypto.encode(key, input[i]);
             }
+            console.log(localFileHeader.crc32);
             offset += 12;
             length -= 12;
 

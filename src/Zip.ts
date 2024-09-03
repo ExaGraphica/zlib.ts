@@ -35,6 +35,7 @@ export interface FileObjectOptions{
     password?: Uint8Array | number[] | string,
     os?: ZipOperatingSystem,
     date?: Date,
+    mtime?: Uint8Array,
 
     deflateOptions?: RawDeflateOptions,
 }
@@ -124,6 +125,18 @@ export class Zip {
             var filenameLength = file.filename.length;
             var extraFieldLength = (file.option.extraField) ? file.option.extraField.length : 0;
             var commentLength = (file.option.comment) ? file.option.comment.length : 0;
+            
+            var date = file.option.date ?? new Date();
+            file.option.mtime = new Uint8Array([
+                ((date.getMinutes() & 0x7) << 5) |
+                (date.getSeconds() >>> 1),
+                (date.getHours() << 3) |
+                (date.getMinutes() >> 3),
+                ((date.getMonth() + 1 & 0x7) << 5) |
+                (date.getDate()),
+                ((date.getFullYear() - 1980 & 0x7f) << 1) |
+                (date.getMonth() + 1 >> 3)
+            ]);
 
             // If not compressed already, compress it
             if (!file.compressed) {
@@ -149,12 +162,15 @@ export class Zip {
                 tmp.set(buffer, 12);
                 buffer = tmp;
 
-                var j = 0;
-                for (j = 0; j < 12; ++j) {
-                    buffer[j] = ZipCrypto.encode(
+                for (var j = 0; j < 12; ++j) {
+                    buffer[j] = ZipCrypto.decode(
                         key,
-                        i === 11 ? (file.crc32! & 0xFF) : (Math.random() * 256 | 0)
+                        j === 11 ? (file.crc32 & 0xFF) : Math.floor(Math.random() * 256)
                     );
+                    /*var C = (j == 11) ? file.crc32 & 0xFF : Math.floor(Math.random() * 256);
+                    C ^= ZipCrypto.getByte(key);
+                    ZipCrypto.updateKeys(key, C);
+                    buffer[j] = C;*/
                 }
 
                 // data encryption
@@ -234,20 +250,8 @@ export class Zip {
             b2.writeShort(compressionMethod);
             
             // date
-            var date = file.option.date ?? new Date();
-            var mtime = new Uint8Array([
-                ((date.getMinutes() & 0x7) << 5) |
-                (date.getSeconds() >>> 1),
-                (date.getHours() << 3) |
-                (date.getMinutes() >> 3),
-                ((date.getMonth() + 1 & 0x7) << 5) |
-                (date.getDate()),
-                ((date.getFullYear() - 1980 & 0x7f) << 1) |
-                (date.getMonth() + 1 >> 3)
-            ]);
-            
-            b1.writeArray(mtime);
-            b2.writeArray(mtime);
+            b1.writeArray(file.option.mtime!);
+            b2.writeArray(file.option.mtime!);
             
             
             // CRC-32

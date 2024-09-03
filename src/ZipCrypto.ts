@@ -15,14 +15,12 @@ export const ZipCrypto = {
     /**
      * @param {(Array.<number>|Uint32Array)} key
      * @param {number} n
+     * Factors of 134775813: 20173 * 6681
      */
     updateKeys(key: Uint32Array, n: number) {
         key[0] = CRC32.single(key[0], n);
-        //key[1] = key[1] + (key[0] & 0xFF);
-        //key[1] *= 20173
-        //key[1] *= 6681;
-        //key[1] += 1;
-        key[1] = Number((BigInt(key[1] + (key[0] & 0xFF)) * BigInt(134775813)) & BigInt(0xFFFFFFFF));
+        key[1] = key[1] + (key[0] & 0xFF);
+        key[1] = Number((BigInt(key[1]) * BigInt(134775813) + BigInt(1)) & BigInt(0xFFFFFFFF));
         key[2] = CRC32.single(key[2], key[1] >>> 24);
     },
 
@@ -50,7 +48,6 @@ export const ZipCrypto = {
     decode(key: Uint32Array, n: number): number {
         n ^= this.getByte(key);
         this.updateKeys(key, n);
-
         return n;
     },
 
@@ -61,7 +58,7 @@ export const ZipCrypto = {
      */
     encode(key: Uint32Array, n: number): number {
         var tmp = this.getByte(key);
-
+        
         this.updateKeys(key, n);
 
         return tmp ^ n;
