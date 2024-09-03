@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zip Test</title>
+</head>
+
+<body>
+    <h1>Zip (PKZip) Test</h1>
+
+    <input type="file" id="file"><br>
+    <button onclick="openFile()">Open File</button>
+    <p id="info1"></p>
+    <button onclick="compress()">Compress</button>
+    <p id="info2"></p>
+    <button onclick="download()">Download Compressed File</button><br>
+    <button onclick="decompress()">Decompress</button>
+    <p id="info3"></p>
+
+    <script type="module" src="../js/index-zip.js"></script>
+    <script src="./test.js"></script>
+    <script>
+        var gebi = n => document.getElementById(n);
+        var log = console.log;
+        
+        var fileData = null;
+        var filename = null;
+        var compressed = null;
+        var renamed = null;
+        var decompressed = null;
+        
+        function openFile(){
+            var file = gebi('file').files[0];
+            var fr = new FileReader();
+            fr.addEventListener("load", function(){
+                fileData = new Uint8Array(fr.result);
+                filename = file.name;
+                gebi('info1').innerText = `Name: ${filename}\nSize: ${fileData.length}`;
+            });
+            fr.readAsArrayBuffer(file);
+        }
+        
+        function compress(){
+            var zip = new Zlib.Zip();
+            zip.addFile(fileData, filename);
+            compressed = zip.compress();
+            renamed = filename.split('.');
+            renamed[renamed.length - 1] = 'zip';
+            renamed = renamed.join('.');
+            log(zip);
+            gebi('info2').innerText = `Name: ${renamed}\nSize: ${compressed.length}\nCompression Ratio: ${(compressed.length / fileData.length * 100).toFixed(2)}%`;
+        }
+        
+        function download(){
+            downloadFile(compressed, renamed);
+        }
+        
+        function decompress(){
+            var unzip = new Zlib.Unzip(compressed);
+            var filenames = unzip.getFilenames();
+            log(filenames);
+            decompressed = unzip.decompress(filenames[0]);
+            log(unzip);
+            gebi('info3').innerText = `Name: ${filenames[0]}\nSize: ${decompressed.length}\nDecompression Ratio: ${(decompressed.length / compressed.length * 100).toFixed(2)}%`;
+            
+            if(fileData.length !== decompressed.length) alert("Something has gone wrong.");
+        }
+        
+        //
+        //
+    </script>
+</body>
+
+</html>

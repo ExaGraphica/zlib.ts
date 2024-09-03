@@ -128,8 +128,12 @@ export class GUnzip {
         }
 
         // The buffer size for inflate processing is known in advance, making it faster
-        b.p = input.length - 4;
-        var isize = b.readUint();
+        var isize = (
+            input[input.length - 4]
+            | (input[input.length - 3] << 8)
+            | (input[input.length - 2] << 16)
+            | (input[input.length - 1] << 24)
+        ) >>> 0;
 
         // Check the validity of isize
         // In Huffman coding, the minimum is 2 bits, so the maximum is 1/4
@@ -144,9 +148,8 @@ export class GUnzip {
         var rawinflate = new RawInflate(input, { 'index': b.p, 'bufferSize': inflen });
         var inflated = rawinflate.decompress();
         member.data = inflated;
-        var ip = rawinflate.ip;
 
-        b = new ByteStream(input, ip);
+        b = new ByteStream(input, rawinflate.ip);
 
         // crc32
         var crc32 = b.readUint();
@@ -163,7 +166,7 @@ export class GUnzip {
         }
 
         this.member.push(member as GUnzipMember);
-        this.ip = ip;
+        this.ip = b.p;
     }
 
     /**

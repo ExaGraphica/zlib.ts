@@ -21,7 +21,7 @@ export class Heap {
      * @return {number} Parent node index.
      */
     getParent(index: number): number {
-        return ((index - 2) / 4 | 0) * 2;
+        return ((index - 2) >> 2) << 1;
     };
 
     /**

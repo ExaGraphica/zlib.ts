@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GZip Test</title>
+</head>
+
+<body>
+    <h1>GZip Test</h1>
+    
+    <input type="file" id="file"><br>
+    <button onclick="openFile()">Open File</button>
+    <p id="info1"></p>
+    <button onclick="compress()">Compress</button>
+    <p id="info2"></p>
+    <button onclick="download()">Download Compressed File</button><br>
+    <button onclick="decompress()">Decompress</button>
+    <p id="info3"></p>
+
+    <script type="module" src="../js/index-gzip.js"></script>
+    <script src="./test.js"></script>
+    <script>
+        var gebi = n => document.getElementById(n);
+        var log = console.log;
+        
+        var fileData = null;
+        var filename = null;
+        var compressed = null;
+        var renamed = null;
+        var decompressed = null;
+        
+        function openFile(){
+            var file = gebi('file').files[0];
+            var fr = new FileReader();
+            fr.addEventListener("load", function(){
+                fileData = new Uint8Array(fr.result);
+                filename = file.name;
+                gebi('info1').innerText = `Name: ${filename}\nSize: ${fileData.length}`;
+            });
+            fr.readAsArrayBuffer(file);
+        }
+        
+        function compress(){
+            var gzip = new Zlib.GZip(fileData, { filename: filename });
+            compressed = gzip.compress();
+            renamed = filename.split('.');
+            renamed[renamed.length - 1] = 'gz';
+            renamed = renamed.join('.');
+            log(gzip);
+            gebi('info2').innerText = `Name: ${renamed}\nSize: ${compressed.length}\nCompression Ratio: ${(compressed.length / fileData.length * 100).toFixed(2)}%`;
+        }
+        
+        function download(){
+            downloadFile(compressed, renamed);
+        }
+        
+        function decompress(){
+            var gunzip = new Zlib.GUnzip(compressed);
+            decompressed = gunzip.decompress();
+            log(gunzip);
+            gebi('info3').innerText = `Name: ${gunzip.member[0].name}\nSize: ${decompressed.length}\nDecompression Ratio: ${(decompressed.length / compressed.length * 100).toFixed(2)}%`;
+            
+            if(fileData.length !== decompressed.length) alert("Something has gone wrong.");
+        }
+        
+        //
+        //
+    </script>
+</body>
+
+</html>
