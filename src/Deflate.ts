@@ -17,6 +17,8 @@ export class Deflate {
     compressionType: CompressionType;
     rawDeflate: RawDeflate;
     
+    adler32: number | null = null;
+    
     /**
      * Zlib Deflate
      * @constructor
@@ -77,6 +79,7 @@ export class Deflate {
 
         // Adler-32 checksum
         var adler = Adler32.create(this.input);
+        this.adler32 = adler;
         
         this.rawDeflate.op = b.p;
         output = this.rawDeflate.compress();

@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GZip Test</title>
+    <title>Deflate Test</title>
 </head>
 
 <body>
-    <h1>GZip Test</h1>
+    <h1>Deflate/Inflate Test</h1>
     
     <input type="file" id="file"><br>
     <button onclick="openFile()">Open File</button>
@@ -19,7 +19,7 @@
     <button onclick="decompress()">Decompress</button>
     <p id="info3"></p>
 
-    <script type="module" src="../js/index-gzip.js"></script>
+    <script type="module" src="../js/index-deflate.js"></script>
     <script src="./test.js"></script>
     <script>
         var gebi = n => document.getElementById(n);
@@ -37,19 +37,16 @@
             fr.addEventListener("load", function(){
                 fileData = new Uint8Array(fr.result);
                 filename = file.name;
-                gebi('info1').innerText = `Name: ${filename}\nSize: ${fileData.length}\nAdler32: ${fileData.adler32}`;
+                gebi('info1').innerText = `Name: ${filename}\nSize: ${fileData.length}`;
             });
             fr.readAsArrayBuffer(file);
         }
         
         function compress(){
-            var gzip = new Zlib.GZip(fileData, { filename: filename });
-            compressed = gzip.compress();
-            renamed = filename.split('.');
-            renamed[renamed.length - 1] = 'gz';
-            renamed = renamed.join('.');
-            log(gzip);
-            gebi('info2').innerText = `Name: ${renamed}\nSize: ${compressed.length}\nCompression Ratio: ${(compressed.length / fileData.length * 100).toFixed(2)}%`;
+            var deflator = new Zlib.Deflate(fileData);
+            compressed = deflator.compress();
+            log(deflator);
+            gebi('info2').innerText = `Size: ${compressed.length}\nCompression Ratio: ${(compressed.length / fileData.length * 100).toFixed(2)}%\nAdler32: ${deflator.adler32.toString(16)}`;
         }
         
         function download(){
@@ -57,10 +54,10 @@
         }
         
         function decompress(){
-            var gunzip = new Zlib.GUnzip(compressed);
-            decompressed = gunzip.decompress();
-            log(gunzip);
-            gebi('info3').innerText = `Name: ${gunzip.member[0].name}\nSize: ${decompressed.length}\nDecompression Ratio: ${(decompressed.length / compressed.length * 100).toFixed(2)}%`;
+            var inflator = new Zlib.Inflate(compressed, {verify: true});
+            log(inflator);
+            decompressed = inflator.decompress();
+            gebi('info3').innerText = `Size: ${decompressed.length}\nDecompression Ratio: ${(decompressed.length / compressed.length * 100).toFixed(2)}%\nAdler32: ${inflator.adler32}`;
             
             if(fileData.length !== decompressed.length) alert("Something has gone wrong.");
         }

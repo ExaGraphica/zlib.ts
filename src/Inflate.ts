@@ -17,6 +17,8 @@ export class Inflate{
     ip: number = 0;
     rawinflate: RawInflate;
     verify: boolean;
+    
+    adler32: number | null = null;
 
     /**
      * @constructor
@@ -74,14 +76,15 @@ export class Inflate{
 
         buffer = this.rawinflate.decompress();
         this.ip = this.rawinflate.ip;
-        var b = new ByteStream(buffer, this.ip);
 
         // verify adler-32
         if (this.verify) {
+            var b = new ByteStream(input, this.ip);
             //adler-32 checksum
-            var adler32 = b.readUintBE();
+            var adler32 = Adler32.create(buffer);
+            this.adler32 = adler32;
 
-            if (adler32 !== Adler32.create(buffer)) {
+            if (adler32 !== b.readUintBE()) {
                 throw new Error('invalid adler-32 checksum');
             }
         }
