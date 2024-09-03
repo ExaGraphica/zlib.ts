@@ -2,7 +2,7 @@ import { CRC32 } from "./CRC32";
 import { RawInflate } from "./RawInflate";
 import { stringToByteArray } from "./Util";
 import { CentralDirectorySignature, FileHeaderSignature, LocalFileHeaderSignature, ZipCompressionMethod, ZipFlags, ZipOperatingSystem } from "./Zip";
-import { ZipEncryption } from "./ZipEncryption";
+import { ZipCrypto } from "./ZipCrypto";
 import { ByteStream } from "ByteStream";
 
 export interface LocalFileHeader {
@@ -210,7 +210,7 @@ export class Unzip {
      * @param {Object=} opts options.
      * @constructor
      */
-    constructor(input: Uint8Array | number[], opts: UnzipOptions) {
+    constructor(input: Uint8Array | number[], opts: UnzipOptions = {}) {
         this.input = input instanceof Uint8Array ? input : new Uint8Array(input);
         this.verify = opts.verify ?? false;
 
@@ -264,18 +264,18 @@ export class Unzip {
         if ((localFileHeader.flags & ZipFlags.ENCRYPT) !== 0) {
             var password = opts.password ?? this.password;
             if (!password) throw new Error('encrypted: please set password');
-            var key = ZipEncryption.createKey(password);
+            var key = ZipCrypto.createKey(password);
             
             // encryption header
             for (var i = offset; i < offset + 12; ++i) {
-                ZipEncryption.decode(key, input[i]);
+                ZipCrypto.decode(key, input[i]);
             }
             offset += 12;
             length -= 12;
 
             // decryption
             for (var i = offset; i < offset + length; ++i) {
-                input[i] = ZipEncryption.decode(key, input[i]);
+                input[i] = ZipCrypto.decode(key, input[i]);
             }
         }
 

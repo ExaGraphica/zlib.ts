@@ -1,7 +1,7 @@
 import { CRC32 } from "./CRC32";
 import { stringToByteArray } from "./Util";
 
-export const ZipEncryption = {
+export const ZipCrypto = {
     /**
      * @param {(Array.<number>|Uint32Array)} key
      * @return {number}
@@ -18,8 +18,11 @@ export const ZipEncryption = {
      */
     updateKeys(key: Uint32Array, n: number) {
         key[0] = CRC32.single(key[0], n);
-        key[1] =
-            (((((key[1] + (key[0] & 0xFF)) * 20173 >>> 0) * 6681) >>> 0) + 1) >>> 0;
+        //key[1] = key[1] + (key[0] & 0xFF);
+        //key[1] *= 20173
+        //key[1] *= 6681;
+        //key[1] += 1;
+        key[1] = Number((BigInt(key[1] + (key[0] & 0xFF)) * BigInt(134775813)) & BigInt(0xFFFFFFFF));
         key[2] = CRC32.single(key[2], key[1] >>> 24);
     },
 

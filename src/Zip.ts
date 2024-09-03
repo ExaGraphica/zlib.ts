@@ -2,7 +2,7 @@ import { ByteStream } from "ByteStream";
 import { CRC32 } from "./CRC32";
 import { RawDeflate, RawDeflateOptions } from "./RawDeflate";
 import { stringToByteArray } from "./Util";
-import { ZipEncryption } from "./ZipEncryption";
+import { ZipCrypto } from "./ZipCrypto";
 
 export enum ZipCompressionMethod{
     STORE = 0,
@@ -139,7 +139,7 @@ export class Zip {
             // encryption
             if (file.option.password != undefined || this.password != undefined) {
                 // init encryption
-                var key = ZipEncryption.createKey((file.option.password ?? this.password)!);
+                var key = ZipCrypto.createKey((file.option.password ?? this.password)!);
 
                 // add header
                 var buffer = file.buffer;
@@ -151,7 +151,7 @@ export class Zip {
 
                 var j = 0;
                 for (j = 0; j < 12; ++j) {
-                    buffer[j] = ZipEncryption.encode(
+                    buffer[j] = ZipCrypto.encode(
                         key,
                         i === 11 ? (file.crc32! & 0xFF) : (Math.random() * 256 | 0)
                     );
@@ -159,7 +159,7 @@ export class Zip {
 
                 // data encryption
                 for (; j < buffer.length; ++j) {
-                    buffer[j] = ZipEncryption.encode(key, buffer[j]);
+                    buffer[j] = ZipCrypto.encode(key, buffer[j]);
                 }
                 file.buffer = buffer;
             }
