@@ -44,7 +44,7 @@ export class GUnzip {
         member.id1 = b.readByte(),
             member.id2 = b.readByte();
         // check signature
-        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[1])) {
+        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[2])) {
             throw new Error('invalid file signature:' + member.id1 + ',' + member.id2);
         }
         // check compression method
@@ -62,12 +62,12 @@ export class GUnzip {
         // operating system
         member.os = b.readByte();
         // extra
-        if ((flg & GZipFlagsMask.FEXTRA) > 0) {
+        if (Boolean(flg & GZipFlagsMask.FEXTRA)) {
             member.xlen = b.readShort();
             b.p = this.decodeSubField(b.p, member.xlen);
         }
         // fname
-        if ((flg & GZipFlagsMask.FNAME) > 0) {
+        if (Boolean(flg & GZipFlagsMask.FNAME)) {
             var str = '', c = 1;
             while (c != 0) {
                 c = b.readByte();
@@ -78,7 +78,7 @@ export class GUnzip {
             member.name = str;
         }
         // fcomment
-        if ((flg & GZipFlagsMask.FCOMMENT) > 0) {
+        if (Boolean(flg & GZipFlagsMask.FCOMMENT)) {
             var str = '', c = 1;
             while (c != 0) {
                 c = b.readByte();
@@ -96,7 +96,10 @@ export class GUnzip {
             }
         }
         // The buffer size for inflate processing is known in advance, making it faster
-        var isize = b.readUint();
+        var isize = (input[input.length - 4]
+            | (input[input.length - 3] << 8)
+            | (input[input.length - 2] << 16)
+            | (input[input.length - 1] << 24)) >>> 0;
         // Check the validity of isize
         // In Huffman coding, the minimum is 2 bits, so the maximum is 1/4
         // In LZ77 coding, the length and distance can be expressed in 258 bytes, so the maximum is 1/128.
@@ -109,8 +112,7 @@ export class GUnzip {
         var rawinflate = new RawInflate(input, { 'index': b.p, 'bufferSize': inflen });
         var inflated = rawinflate.decompress();
         member.data = inflated;
-        var ip = rawinflate.ip;
-        b = new ByteStream(input, ip);
+        b = new ByteStream(input, rawinflate.ip);
         // crc32
         var crc32 = b.readUint();
         if (CRC32.create(inflated) !== crc32) {
@@ -118,14 +120,13 @@ export class GUnzip {
                 CRC32.create(inflated).toString(16) + ' / 0x' + crc32.toString(16));
         }
         // input size
-        b.p = input.length - 4;
         var isize = b.readUint();
         if ((inflated.length & 0xFFFFFFFF) !== isize) {
             throw new Error('invalid input size: ' +
                 (inflated.length & 0xFFFFFFFF) + ' / ' + isize);
         }
         this.member.push(member);
-        this.ip = ip;
+        this.ip = b.p;
     }
     /**
      * Decode Subfield

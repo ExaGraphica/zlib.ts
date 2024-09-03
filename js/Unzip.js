@@ -2,7 +2,7 @@ import { CRC32 } from "./CRC32.js";
 import { RawInflate } from "./RawInflate.js";
 import { stringToByteArray } from "./Util.js";
 import { CentralDirectorySignature, FileHeaderSignature, LocalFileHeaderSignature, ZipCompressionMethod, ZipFlags } from "./Zip.js";
-import { ZipEncryption } from "./ZipEncryption.js";
+import { ZipCrypto } from "./ZipCrypto.js";
 import { ByteStream } from "./ByteStream.js";
 function parseLocalFileHeader(b) {
     var fh = {}; //File header build gradually
@@ -102,7 +102,7 @@ export class Unzip {
      * @param {Object=} opts options.
      * @constructor
      */
-    constructor(input, opts) {
+    constructor(input, opts = {}) {
         var _a;
         this.ip = 0;
         this.EOCD = null;
@@ -153,16 +153,17 @@ export class Unzip {
             var password = (_a = opts.password) !== null && _a !== void 0 ? _a : this.password;
             if (!password)
                 throw new Error('encrypted: please set password');
-            var key = ZipEncryption.createKey(password);
+            var key = ZipCrypto.createKey(password);
             // encryption header
             for (var i = offset; i < offset + 12; ++i) {
-                ZipEncryption.decode(key, input[i]);
+                ZipCrypto.encode(key, input[i]);
             }
+            console.log(localFileHeader.crc32);
             offset += 12;
             length -= 12;
             // decryption
             for (var i = offset; i < offset + length; ++i) {
-                input[i] = ZipEncryption.decode(key, input[i]);
+                input[i] = ZipCrypto.decode(key, input[i]);
             }
         }
         if (localFileHeader.compression == ZipCompressionMethod.DEFLATE) {

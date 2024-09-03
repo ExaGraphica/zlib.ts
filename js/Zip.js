@@ -2,7 +2,7 @@ import { ByteStream } from "./ByteStream.js";
 import { CRC32 } from "./CRC32.js";
 import { RawDeflate } from "./RawDeflate.js";
 import { stringToByteArray } from "./Util.js";
-import { ZipEncryption } from "./ZipEncryption.js";
+import { ZipCrypto } from "./ZipCrypto.js";
 export var ZipCompressionMethod;
 (function (ZipCompressionMethod) {
     ZipCompressionMethod[ZipCompressionMethod["STORE"] = 0] = "STORE";
@@ -84,6 +84,17 @@ export class Zip {
             var filenameLength = file.filename.length;
             var extraFieldLength = (file.option.extraField) ? file.option.extraField.length : 0;
             var commentLength = (file.option.comment) ? file.option.comment.length : 0;
+            var date = (_a = file.option.date) !== null && _a !== void 0 ? _a : new Date();
+            file.option.mtime = new Uint8Array([
+                ((date.getMinutes() & 0x7) << 5) |
+                    (date.getSeconds() >>> 1),
+                (date.getHours() << 3) |
+                    (date.getMinutes() >> 3),
+                ((date.getMonth() + 1 & 0x7) << 5) |
+                    (date.getDate()),
+                ((date.getFullYear() - 1980 & 0x7f) << 1) |
+                    (date.getMonth() + 1 >> 3)
+            ]);
             // If not compressed already, compress it
             if (!file.compressed) {
                 // Calculate CRC32 before compressing
@@ -96,20 +107,23 @@ export class Zip {
             // encryption
             if (file.option.password != undefined || this.password != undefined) {
                 // init encryption
-                var key = ZipEncryption.createKey(((_a = file.option.password) !== null && _a !== void 0 ? _a : this.password));
+                var key = ZipCrypto.createKey(((_b = file.option.password) !== null && _b !== void 0 ? _b : this.password));
                 // add header
                 var buffer = file.buffer;
                 // Shift 12 bytes
                 var tmp = new Uint8Array(buffer.length + 12);
                 tmp.set(buffer, 12);
                 buffer = tmp;
-                var j = 0;
-                for (j = 0; j < 12; ++j) {
-                    buffer[j] = ZipEncryption.encode(key, i === 11 ? (file.crc32 & 0xFF) : (Math.random() * 256 | 0));
+                for (var j = 0; j < 12; ++j) {
+                    buffer[j] = ZipCrypto.decode(key, j === 11 ? (file.crc32 & 0xFF) : Math.floor(Math.random() * 256));
+                    /*var C = (j == 11) ? file.crc32 & 0xFF : Math.floor(Math.random() * 256);
+                    C ^= ZipCrypto.getByte(key);
+                    ZipCrypto.updateKeys(key, C);
+                    buffer[j] = C;*/
                 }
                 // data encryption
                 for (; j < buffer.length; ++j) {
-                    buffer[j] = ZipEncryption.encode(key, buffer[j]);
+                    buffer[j] = ZipCrypto.encode(key, buffer[j]);
                 }
                 file.buffer = buffer;
             }
@@ -152,7 +166,7 @@ export class Zip {
             // compressor info
             var needVersion = 20;
             b2.writeByte(needVersion & 0xFF);
-            b2.writeByte((_b = (file.option.os)) !== null && _b !== void 0 ? _b : ZipOperatingSystem.MSDOS);
+            b2.writeByte((_c = (file.option.os)) !== null && _c !== void 0 ? _c : ZipOperatingSystem.MSDOS);
             // need version
             b1.writeShort(needVersion);
             b2.writeShort(needVersion);
@@ -168,19 +182,8 @@ export class Zip {
             b1.writeShort(compressionMethod);
             b2.writeShort(compressionMethod);
             // date
-            var date = (_c = file.option.date) !== null && _c !== void 0 ? _c : new Date();
-            var mtime = new Uint8Array([
-                ((date.getMinutes() & 0x7) << 5) |
-                    (date.getSeconds() >>> 1),
-                (date.getHours() << 3) |
-                    (date.getMinutes() >> 3),
-                ((date.getMonth() + 1 & 0x7) << 5) |
-                    (date.getDate()),
-                ((date.getFullYear() - 1980 & 0x7f) << 1) |
-                    (date.getMonth() + 1 >> 3)
-            ]);
-            b1.writeArray(mtime);
-            b2.writeArray(mtime);
+            b1.writeArray(file.option.mtime);
+            b2.writeArray(file.option.mtime);
             // CRC-32
             var crc32 = file.crc32;
             b1.writeUint(crc32);

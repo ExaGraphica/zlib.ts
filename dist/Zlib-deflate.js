@@ -19,23 +19,25 @@
     create(array) {
       if (typeof array == "string") {
         array = stringToByteArray(array);
+      } else if (!(array instanceof Uint8Array)) {
+        array = new Uint8Array(array);
       }
       return this.update(1, array);
     },
     /**
      * Adler32 checksum creation
      * @param {number} adler Current hash value.
-     * @param {!(Array<number>|Uint8Array)} array Byte array used in updating
+     * @param {!Uint8Array} array Byte array used in updating
      * @return {number} Adler32 checksum.
      */
-    update(adler, array) {
-      var s1 = adler & 65535, s2 = adler >> 16 & 65535, len = array.length;
-      var i = 0;
+    update(adler, array, len, pos = 0) {
+      var s1 = adler & 65535, s2 = adler >> 16 & 65535;
+      len = len ?? array.length;
       while (len > 0) {
         var tlen = len > this.OptimizationParameter ? this.OptimizationParameter : len;
         len -= tlen;
         do {
-          s1 += array[i++];
+          s1 += array[pos++];
           s2 += s1;
         } while (--tlen);
         s1 %= 65521;
@@ -182,7 +184,7 @@
      * @return {number} Parent node index.
      */
     getParent(index) {
-      return ((index - 2) / 4 | 0) * 2;
+      return index - 2 >> 2 << 1;
     }
     /**
      * Get the index of a child node
@@ -1821,6 +1823,7 @@
      * @param {Object=} opts option parameters.
      */
     constructor(input, opts = {}) {
+      this.adler32 = null;
       this.input = input;
       this.output = new Uint8Array(DefaultBufferSize);
       var rawDeflateOption = {};
@@ -1855,6 +1858,7 @@
       flg |= fcheck;
       b.writeByte(flg);
       var adler = Adler32.create(this.input);
+      this.adler32 = adler;
       this.rawDeflate.op = b.p;
       output = this.rawDeflate.compress();
       var pos = output.length;
@@ -1886,6 +1890,7 @@
      */
     constructor(input, opts = {}) {
       this.ip = 0;
+      this.adler32 = null;
       this.input = input;
       this.ip = opts.index ?? 0;
       this.verify = opts.verify ?? false;
@@ -1916,10 +1921,11 @@
       var buffer;
       buffer = this.rawinflate.decompress();
       this.ip = this.rawinflate.ip;
-      var b = new ByteStream(buffer, this.ip);
       if (this.verify) {
-        var adler32 = b.readUintBE();
-        if (adler32 !== Adler32.create(buffer)) {
+        var b = new ByteStream(input, this.ip);
+        var adler32 = Adler32.create(buffer);
+        this.adler32 = adler32;
+        if (adler32 !== b.readUintBE()) {
           throw new Error("invalid adler-32 checksum");
         }
       }

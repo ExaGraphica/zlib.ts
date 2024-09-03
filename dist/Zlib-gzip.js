@@ -37,7 +37,7 @@
         crc = crc >>> 8 ^ table[(crc ^ data[pos + 6]) & 255];
         crc = crc >>> 8 ^ table[(crc ^ data[pos + 7]) & 255];
       }
-      return crc ^ 4294967295;
+      return (crc ^ 4294967295) >>> 0;
     },
     /**
      * @param {number} num
@@ -189,7 +189,7 @@
      * @return {number} Parent node index.
      */
     getParent(index) {
-      return ((index - 2) / 4 | 0) * 2;
+      return index - 2 >> 2 << 1;
     }
     /**
      * Get the index of a child node
@@ -1909,7 +1909,7 @@
       var op = rawdeflate.op;
       if (op + 8 > output.length) {
         this.output = new Uint8Array(op + 8);
-        this.output.set(new Uint8Array(output.buffer));
+        this.output.set(new Uint8Array(output));
         output = this.output;
       } else {
       }
@@ -1919,7 +1919,7 @@
       var il = input.length;
       b.writeUint(il);
       this.ip = ip;
-      if (op < output.length) {
+      if (b.p < output.length) {
         this.output = output = output.subarray(0, op);
       }
       return output;
@@ -1976,11 +1976,11 @@
       member.mtime = new Date(mtime * 1e3);
       member.xfl = b.readByte();
       member.os = b.readByte();
-      if ((flg & 4 /* FEXTRA */) > 0) {
+      if (Boolean(flg & 4 /* FEXTRA */)) {
         member.xlen = b.readShort();
         b.p = this.decodeSubField(b.p, member.xlen);
       }
-      if ((flg & 8 /* FNAME */) > 0) {
+      if (Boolean(flg & 8 /* FNAME */)) {
         var str = "", c = 1;
         while (c != 0) {
           c = b.readByte();
@@ -1989,7 +1989,7 @@
         }
         member.name = str;
       }
-      if ((flg & 16 /* FCOMMENT */) > 0) {
+      if (Boolean(flg & 16 /* FCOMMENT */)) {
         var str = "", c = 1;
         while (c != 0) {
           c = b.readByte();
@@ -2004,7 +2004,7 @@
           throw new Error("invalid header crc16");
         }
       }
-      var isize = b.readUint();
+      var isize = (input[input.length - 4] | input[input.length - 3] << 8 | input[input.length - 2] << 16 | input[input.length - 1] << 24) >>> 0;
       var inflen = void 0;
       if (input.length - b.p - /* CRC-32 */
       4 - /* ISIZE */
@@ -2014,8 +2014,7 @@
       var rawinflate = new RawInflate(input, { "index": b.p, "bufferSize": inflen });
       var inflated = rawinflate.decompress();
       member.data = inflated;
-      var ip = rawinflate.ip;
-      b = new ByteStream(input, ip);
+      b = new ByteStream(input, rawinflate.ip);
       var crc32 = b.readUint();
       if (CRC32.create(inflated) !== crc32) {
         throw new Error("invalid CRC-32 checksum: 0x" + CRC32.create(inflated).toString(16) + " / 0x" + crc32.toString(16));
@@ -2025,7 +2024,7 @@
         throw new Error("invalid input size: " + (inflated.length & 4294967295) + " / " + isize);
       }
       this.member.push(member);
-      this.ip = ip;
+      this.ip = b.p;
     }
     /**
      * Decode Subfield

@@ -25,7 +25,7 @@ export const Adler32 = {
      * @param {!Uint8Array} array Byte array used in updating
      * @return {number} Adler32 checksum.
      */
-    update(adler: number, array: Uint8Array, len: number, pos: number = 0): number {
+    update(adler: number, array: Uint8Array, len?: number, pos: number = 0): number {
         var s1: number = adler & 0xFFFF,
             s2: number = (adler >> 16) & 0xFFFF;
         

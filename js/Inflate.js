@@ -17,6 +17,7 @@ export class Inflate {
     constructor(input, opts = {}) {
         var _a, _b;
         this.ip = 0;
+        this.adler32 = null;
         this.input = input;
         // option parameters
         this.ip = (_a = opts.index) !== null && _a !== void 0 ? _a : 0;
@@ -53,12 +54,13 @@ export class Inflate {
         var buffer; //inflated buffer.
         buffer = this.rawinflate.decompress();
         this.ip = this.rawinflate.ip;
-        var b = new ByteStream(buffer, this.ip);
         // verify adler-32
         if (this.verify) {
+            var b = new ByteStream(input, this.ip);
             //adler-32 checksum
-            var adler32 = b.readUintBE();
-            if (adler32 !== Adler32.create(buffer)) {
+            var adler32 = Adler32.create(buffer);
+            this.adler32 = adler32;
+            if (adler32 !== b.readUintBE()) {
                 throw new Error('invalid adler-32 checksum');
             }
         }

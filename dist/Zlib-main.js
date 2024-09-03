@@ -37,7 +37,7 @@
         crc = crc >>> 8 ^ table[(crc ^ data[pos + 6]) & 255];
         crc = crc >>> 8 ^ table[(crc ^ data[pos + 7]) & 255];
       }
-      return crc ^ 4294967295;
+      return (crc ^ 4294967295) >>> 0;
     },
     /**
      * @param {number} num
@@ -190,7 +190,7 @@
      * @return {number} Parent node index.
      */
     getParent(index) {
-      return ((index - 2) / 4 | 0) * 2;
+      return index - 2 >> 2 << 1;
     }
     /**
      * Get the index of a child node
@@ -1910,7 +1910,7 @@
       var op = rawdeflate.op;
       if (op + 8 > output.length) {
         this.output = new Uint8Array(op + 8);
-        this.output.set(new Uint8Array(output.buffer));
+        this.output.set(new Uint8Array(output));
         output = this.output;
       } else {
       }
@@ -1920,7 +1920,7 @@
       var il = input.length;
       b.writeUint(il);
       this.ip = ip;
-      if (op < output.length) {
+      if (b.p < output.length) {
         this.output = output = output.subarray(0, op);
       }
       return output;
@@ -1977,11 +1977,11 @@
       member.mtime = new Date(mtime * 1e3);
       member.xfl = b.readByte();
       member.os = b.readByte();
-      if ((flg & 4 /* FEXTRA */) > 0) {
+      if (Boolean(flg & 4 /* FEXTRA */)) {
         member.xlen = b.readShort();
         b.p = this.decodeSubField(b.p, member.xlen);
       }
-      if ((flg & 8 /* FNAME */) > 0) {
+      if (Boolean(flg & 8 /* FNAME */)) {
         var str = "", c = 1;
         while (c != 0) {
           c = b.readByte();
@@ -1990,7 +1990,7 @@
         }
         member.name = str;
       }
-      if ((flg & 16 /* FCOMMENT */) > 0) {
+      if (Boolean(flg & 16 /* FCOMMENT */)) {
         var str = "", c = 1;
         while (c != 0) {
           c = b.readByte();
@@ -2005,7 +2005,7 @@
           throw new Error("invalid header crc16");
         }
       }
-      var isize = b.readUint();
+      var isize = (input[input.length - 4] | input[input.length - 3] << 8 | input[input.length - 2] << 16 | input[input.length - 1] << 24) >>> 0;
       var inflen = void 0;
       if (input.length - b.p - /* CRC-32 */
       4 - /* ISIZE */
@@ -2015,8 +2015,7 @@
       var rawinflate = new RawInflate(input, { "index": b.p, "bufferSize": inflen });
       var inflated = rawinflate.decompress();
       member.data = inflated;
-      var ip = rawinflate.ip;
-      b = new ByteStream(input, ip);
+      b = new ByteStream(input, rawinflate.ip);
       var crc32 = b.readUint();
       if (CRC32.create(inflated) !== crc32) {
         throw new Error("invalid CRC-32 checksum: 0x" + CRC32.create(inflated).toString(16) + " / 0x" + crc32.toString(16));
@@ -2026,7 +2025,7 @@
         throw new Error("invalid input size: " + (inflated.length & 4294967295) + " / " + isize);
       }
       this.member.push(member);
-      this.ip = ip;
+      this.ip = b.p;
     }
     /**
      * Decode Subfield
@@ -2051,8 +2050,8 @@
     }
   };
 
-  // src/ZipEncryption.ts
-  var ZipEncryption = {
+  // src/ZipCrypto.ts
+  var ZipCrypto = {
     /**
      * @param {(Array.<number>|Uint32Array)} key
      * @return {number}
@@ -2064,10 +2063,12 @@
     /**
      * @param {(Array.<number>|Uint32Array)} key
      * @param {number} n
+     * Factors of 134775813: 20173 * 6681
      */
     updateKeys(key, n) {
       key[0] = CRC32.single(key[0], n);
-      key[1] = (((key[1] + (key[0] & 255)) * 20173 >>> 0) * 6681 >>> 0) + 1 >>> 0;
+      key[1] = key[1] + (key[0] & 255);
+      key[1] = Number(BigInt(key[1]) * BigInt(134775813) + BigInt(1) & BigInt(4294967295));
       key[2] = CRC32.single(key[2], key[1] >>> 24);
     },
     /**
@@ -2159,6 +2160,13 @@
         var filenameLength = file.filename.length;
         var extraFieldLength = file.option.extraField ? file.option.extraField.length : 0;
         var commentLength = file.option.comment ? file.option.comment.length : 0;
+        var date = file.option.date ?? /* @__PURE__ */ new Date();
+        file.option.mtime = new Uint8Array([
+          (date.getMinutes() & 7) << 5 | date.getSeconds() >>> 1,
+          date.getHours() << 3 | date.getMinutes() >> 3,
+          (date.getMonth() + 1 & 7) << 5 | date.getDate(),
+          (date.getFullYear() - 1980 & 127) << 1 | date.getMonth() + 1 >> 3
+        ]);
         if (!file.compressed) {
           file.crc32 = CRC32.create(file.buffer);
           if (file.compressionMethod == 8 /* DEFLATE */) {
@@ -2167,20 +2175,19 @@
           }
         }
         if (file.option.password != void 0 || this.password != void 0) {
-          var key = ZipEncryption.createKey(file.option.password ?? this.password);
+          var key = ZipCrypto.createKey(file.option.password ?? this.password);
           var buffer = file.buffer;
           var tmp = new Uint8Array(buffer.length + 12);
           tmp.set(buffer, 12);
           buffer = tmp;
-          var j = 0;
-          for (j = 0; j < 12; ++j) {
-            buffer[j] = ZipEncryption.encode(
+          for (var j = 0; j < 12; ++j) {
+            buffer[j] = ZipCrypto.decode(
               key,
-              i === 11 ? file.crc32 & 255 : Math.random() * 256 | 0
+              j === 11 ? file.crc32 & 255 : Math.floor(Math.random() * 256)
             );
           }
           for (; j < buffer.length; ++j) {
-            buffer[j] = ZipEncryption.encode(key, buffer[j]);
+            buffer[j] = ZipCrypto.encode(key, buffer[j]);
           }
           file.buffer = buffer;
         }
@@ -2218,15 +2225,8 @@
         var compressionMethod = file.compressionMethod;
         b1.writeShort(compressionMethod);
         b2.writeShort(compressionMethod);
-        var date = file.option.date ?? /* @__PURE__ */ new Date();
-        var mtime = new Uint8Array([
-          (date.getMinutes() & 7) << 5 | date.getSeconds() >>> 1,
-          date.getHours() << 3 | date.getMinutes() >> 3,
-          (date.getMonth() + 1 & 7) << 5 | date.getDate(),
-          (date.getFullYear() - 1980 & 127) << 1 | date.getMonth() + 1 >> 3
-        ]);
-        b1.writeArray(mtime);
-        b2.writeArray(mtime);
+        b1.writeArray(file.option.mtime);
+        b2.writeArray(file.option.mtime);
         var crc32 = file.crc32;
         b1.writeUint(crc32);
         b2.writeUint(crc32);
@@ -2376,7 +2376,7 @@
      * @param {Object=} opts options.
      * @constructor
      */
-    constructor(input, opts) {
+    constructor(input, opts = {}) {
       this.ip = 0;
       this.EOCD = null;
       this.input = input instanceof Uint8Array ? input : new Uint8Array(input);
@@ -2418,14 +2418,15 @@
       if ((localFileHeader.flags & 1 /* ENCRYPT */) !== 0) {
         var password = opts.password ?? this.password;
         if (!password) throw new Error("encrypted: please set password");
-        var key = ZipEncryption.createKey(password);
+        var key = ZipCrypto.createKey(password);
         for (var i = offset; i < offset + 12; ++i) {
-          ZipEncryption.decode(key, input[i]);
+          ZipCrypto.encode(key, input[i]);
         }
+        console.log(localFileHeader.crc32);
         offset += 12;
         length -= 12;
         for (var i = offset; i < offset + length; ++i) {
-          input[i] = ZipEncryption.decode(key, input[i]);
+          input[i] = ZipCrypto.decode(key, input[i]);
         }
       }
       if (localFileHeader.compression == 8 /* DEFLATE */) {
@@ -2488,23 +2489,25 @@
     create(array) {
       if (typeof array == "string") {
         array = stringToByteArray(array);
+      } else if (!(array instanceof Uint8Array)) {
+        array = new Uint8Array(array);
       }
       return this.update(1, array);
     },
     /**
      * Adler32 checksum creation
      * @param {number} adler Current hash value.
-     * @param {!(Array<number>|Uint8Array)} array Byte array used in updating
+     * @param {!Uint8Array} array Byte array used in updating
      * @return {number} Adler32 checksum.
      */
-    update(adler, array) {
-      var s1 = adler & 65535, s2 = adler >> 16 & 65535, len = array.length;
-      var i = 0;
+    update(adler, array, len, pos = 0) {
+      var s1 = adler & 65535, s2 = adler >> 16 & 65535;
+      len = len ?? array.length;
       while (len > 0) {
         var tlen = len > this.OptimizationParameter ? this.OptimizationParameter : len;
         len -= tlen;
         do {
-          s1 += array[i++];
+          s1 += array[pos++];
           s2 += s1;
         } while (--tlen);
         s1 %= 65521;
@@ -2531,6 +2534,7 @@
      * @param {Object=} opts option parameters.
      */
     constructor(input, opts = {}) {
+      this.adler32 = null;
       this.input = input;
       this.output = new Uint8Array(DefaultBufferSize);
       var rawDeflateOption = {};
@@ -2565,6 +2569,7 @@
       flg |= fcheck;
       b.writeByte(flg);
       var adler = Adler32.create(this.input);
+      this.adler32 = adler;
       this.rawDeflate.op = b.p;
       output = this.rawDeflate.compress();
       var pos = output.length;
@@ -2596,6 +2601,7 @@
      */
     constructor(input, opts = {}) {
       this.ip = 0;
+      this.adler32 = null;
       this.input = input;
       this.ip = opts.index ?? 0;
       this.verify = opts.verify ?? false;
@@ -2626,10 +2632,11 @@
       var buffer;
       buffer = this.rawinflate.decompress();
       this.ip = this.rawinflate.ip;
-      var b = new ByteStream(buffer, this.ip);
       if (this.verify) {
-        var adler32 = b.readUintBE();
-        if (adler32 !== Adler32.create(buffer)) {
+        var b = new ByteStream(input, this.ip);
+        var adler32 = Adler32.create(buffer);
+        this.adler32 = adler32;
+        if (adler32 !== b.readUintBE()) {
           throw new Error("invalid adler-32 checksum");
         }
       }
