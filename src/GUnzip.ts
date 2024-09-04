@@ -23,8 +23,12 @@ interface GUnzipMember{
 export class GUnzip {
     input: Uint8Array;//input buffer.
     ip: number = 0;//input buffer pointer.
-    member: GUnzipMember[] = [];
+    
+    members: GUnzipMember[] = [];
     decompressed: boolean = false;
+    
+    crc32: number | null = null;
+    
     /**
      * @constructor
      * @param {!Uint8Array} input input buffer.
@@ -39,7 +43,7 @@ export class GUnzip {
     getMembers(): GUnzipMember[] {
         if (!this.decompressed) this.decompress();
 
-        return this.member.slice();
+        return this.members.slice();
     };
 
     /**
@@ -69,7 +73,7 @@ export class GUnzip {
         member.id2 = b.readByte();
 
         // check signature
-        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[2])) {
+        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[1])) {
             throw new Error('invalid file signature:' + member.id1 + ',' + member.id2);
         }
 
@@ -153,7 +157,8 @@ export class GUnzip {
 
         // crc32
         var crc32 = b.readUint();
-        if (CRC32.create(inflated) !== crc32) {
+        this.crc32 = CRC32.create(inflated);
+        if (this.crc32 !== crc32) {
             throw new Error('invalid CRC-32 checksum: 0x' +
                 CRC32.create(inflated).toString(16) + ' / 0x' + crc32.toString(16));
         }
@@ -165,7 +170,7 @@ export class GUnzip {
                 (inflated.length & 0xFFFFFFFF) + ' / ' + isize);
         }
 
-        this.member.push(member as GUnzipMember);
+        this.members.push(member as GUnzipMember);
         this.ip = b.p;
     }
 
@@ -178,7 +183,7 @@ export class GUnzip {
     };
     
     concatMember() {
-        var member = this.member;
+        var member = this.members;
         
         var size = 0;
         for (var i = 0; i < member.length; ++i) {

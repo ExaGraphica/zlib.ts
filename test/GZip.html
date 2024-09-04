@@ -37,7 +37,7 @@
             fr.addEventListener("load", function(){
                 fileData = new Uint8Array(fr.result);
                 filename = file.name;
-                gebi('info1').innerText = `Name: ${filename}\nSize: ${fileData.length}\nAdler32: ${fileData.adler32}`;
+                gebi('info1').innerText = `Name: ${filename}\nSize: ${fileData.length}`;
             });
             fr.readAsArrayBuffer(file);
         }
@@ -49,7 +49,7 @@
             renamed[renamed.length - 1] = 'gz';
             renamed = renamed.join('.');
             log(gzip);
-            gebi('info2').innerText = `Name: ${renamed}\nSize: ${compressed.length}\nCompression Ratio: ${(compressed.length / fileData.length * 100).toFixed(2)}%`;
+            gebi('info2').innerText = `Name: ${renamed}\nSize: ${compressed.length}\nCompression Ratio: ${(compressed.length / fileData.length * 100).toFixed(2)}%\nCRC32: ${gzip.crc32.toString(16)}`;
         }
         
         function download(){
@@ -60,7 +60,7 @@
             var gunzip = new Zlib.GUnzip(compressed);
             decompressed = gunzip.decompress();
             log(gunzip);
-            gebi('info3').innerText = `Name: ${gunzip.member[0].name}\nSize: ${decompressed.length}\nDecompression Ratio: ${(decompressed.length / compressed.length * 100).toFixed(2)}%`;
+            gebi('info3').innerText = `Name: ${gunzip.members[0].name}\nSize: ${decompressed.length}\nDecompression Ratio: ${(decompressed.length / compressed.length * 100).toFixed(2)}%\nCRC32: ${gunzip.crc32.toString(16)}`;
             
             if(fileData.length !== decompressed.length) alert("Something has gone wrong.");
         }

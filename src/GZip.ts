@@ -56,6 +56,8 @@ export class GZip {
 
     output: number[] | Uint8Array | null = null;//output buffer.
     op: number = 0;//output buffer pointer.
+    
+    crc32: number | null = null;
 
     flags: GZipFlags;
     filename: string = '';
@@ -175,8 +177,8 @@ export class GZip {
         var b = new ByteStream(output, op);
 
         // crc32
-        var crc32 = CRC32.create(input);
-        b.writeUint(crc32);
+        this.crc32 = CRC32.create(input);
+        b.writeUint(this.crc32);
 
         // input size
         var il = input.length;

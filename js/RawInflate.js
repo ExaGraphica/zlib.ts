@@ -476,7 +476,8 @@ export class RawInflate {
         if (ratio < 2) {
             //maximum number of huffman code.
             var maxHuffCode = (input.length - this.ip) / this.currentLitlenTable[2];
-            var maxInflateSize = Math.floor(maxHuffCode / 2 * 258); //max inflate size.
+            // var maxInflateSize = Math.floor(maxHuffCode / 2 * 258);//max inflate size.
+            var maxInflateSize = Math.floor(maxHuffCode * 129); //max inflate size.
             //new output buffer size.
             newSize = maxInflateSize < output.length ?
                 output.length + maxInflateSize :
