@@ -476,6 +476,7 @@ export class RawDeflate{
 
     /**
      * Reverse Package Merge Algorithm.
+     * https://gist.github.com/imaya/3985581
      * @param {!Uint32Array} freqs sorted probability.
      * @param {number} symbols number of symbols.
      * @param {number} limit code length limit.
@@ -483,11 +484,11 @@ export class RawDeflate{
      */
     reversePackageMerge(freqs: Uint32Array, symbols: number, limit: number): Uint8Array {
         var minimumCost = new Uint16Array(limit);
-        var flag = new Uint8Array(limit);
-        var codeLength = new Uint8Array(symbols);
-        var value = new Array(limit);
+        var flag: boolean[] = new Array(limit);
+        var codeLength = new Uint8Array(symbols).fill(limit);
+        var value: number[][] = new Array(limit);
         var type = new Array(limit);
-        var currentPosition = new Array(limit);
+        var currentPosition = new Array(limit).fill(0);
         
         /**
          * Recursive Take Package
@@ -500,62 +501,57 @@ export class RawDeflate{
                 takePackage(j + 1);
                 takePackage(j + 1);
             } else {
-                --codeLength[x];
+                codeLength[x]--;
             }
             
-            ++currentPosition[j];
+            currentPosition[j]++;
         }
         
         minimumCost[limit - 1] = symbols;
+        
         var excess = (1 << limit) - symbols;
         var half = (1 << (limit - 1));
         
         for (var j = 0; j < limit; ++j) {
             if (excess < half) {
-                flag[j] = 0;
+                flag[j] = false;
             } else {
-                flag[j] = 1;
+                flag[j] = true;
                 excess -= half;
             }
             excess <<= 1;
-            minimumCost[limit - 2 - j] = (minimumCost[limit - 1 - j] / 2 | 0) + symbols;
+            minimumCost[limit - 2 - j] = (minimumCost[limit - 1 - j] >>> 1) + symbols;
         }
-        minimumCost[0] = flag[0];
+        
+        minimumCost[0] = Number(flag[0]);
 
-        value[0] = new Array(minimumCost[0]);
+        value[0] = new Array(minimumCost[0]);//aka flag[0]
         type[0] = new Array(minimumCost[0]);
         for (var j = 1; j < limit; ++j) {
-            if (minimumCost[j] > 2 * minimumCost[j - 1] + flag[j]) {
-                minimumCost[j] = 2 * minimumCost[j - 1] + flag[j];
+            if (minimumCost[j] > 2 * minimumCost[j - 1] + Number(flag[j])) {
+                minimumCost[j] = 2 * minimumCost[j - 1] + Number(flag[j]);
             }
             value[j] = new Array(minimumCost[j]);
             type[j] = new Array(minimumCost[j]);
         }
-
-        for (var i = 0; i < symbols; ++i) {
-            codeLength[i] = limit;
-        }
+        
 
         for (var t = 0; t < minimumCost[limit - 1]; ++t) {
             value[limit - 1][t] = freqs[t];
             type[limit - 1][t] = t;
         }
-
-        for (var i = 0; i < limit; ++i) {
-            currentPosition[i] = 0;
-        }
-        if (flag[limit - 1] === 1) {
-            --codeLength[0];
-            ++currentPosition[limit - 1];
+        
+        if (flag[limit - 1]) {
+            codeLength[0]--;
+            currentPosition[limit - 1]++;
         }
 
-        for (var j = limit - 2; j >= 0; --j) {
+        for (var j = limit - 2; j >= 0; j--) {
             var i = 0;
-            var weight = 0;
             var next = currentPosition[j + 1];
 
             for (var t = 0; t < minimumCost[j]; t++) {
-                weight = value[j + 1][next] + value[j + 1][next + 1];
+                var weight = value[j + 1][next] + value[j + 1][next + 1];
 
                 if (weight > freqs[i]) {
                     value[j][t] = weight;
@@ -564,14 +560,12 @@ export class RawDeflate{
                 } else {
                     value[j][t] = freqs[i];
                     type[j][t] = i;
-                    ++i;
+                    i++;
                 }
             }
 
             currentPosition[j] = 0;
-            if (flag[j] === 1) {
-                takePackage(j);
-            }
+            if (flag[j]) takePackage(j);
         }
 
         return codeLength;

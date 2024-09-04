@@ -550,7 +550,8 @@ export class RawInflateStream {
         if (ratio < 2) {
             maxHuffCode =
                 (input.length - this.ip) / this.litlenTable![2];
-            maxInflateSize = (maxHuffCode / 2 * 258) | 0;
+            // maxInflateSize = Math.floor(maxHuffCode / 2 * 258);
+            maxInflateSize = Math.floor(maxHuffCode * 129);
             newSize = maxInflateSize < output.length ?
                 output.length + maxInflateSize :
                 output.length << 1;
