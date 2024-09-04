@@ -4,7 +4,7 @@
  */
 import { Adler32 } from "./Adler32.js";
 import { CompressionType, RawDeflate } from "./RawDeflate.js";
-import { DefaultBufferSize, DEFLATE_TOKEN } from "./Constants.js";
+import { DefaultBufferSize } from "./Constants.js";
 import { ByteStream } from "./ByteStream.js";
 export class Deflate {
     /**
@@ -42,12 +42,12 @@ export class Deflate {
      * @return {!Uint8Array} compressed data byte array.
      */
     compress() {
-        var output = this.output;
-        var b = new ByteStream(output, 0);
+        var b = new ByteStream(this.output, 0);
         // Compression Method and Flags
         //cinfo = Math.LOG2E * Math.log(WindowSize) - 8;
-        var cinfo = 7;
-        var cmf = (cinfo << 4) | DEFLATE_TOKEN;
+        //var cmf = (cinfo << 4) | DEFLATE_TOKEN;
+        var cmf = 120;
+        //b.writeByte(cmf);
         b.writeByte(cmf);
         // Flags
         var fdict = 0;
@@ -60,20 +60,16 @@ export class Deflate {
         var adler = Adler32.create(this.input);
         this.adler32 = adler;
         this.rawDeflate.op = b.p;
-        output = this.rawDeflate.compress();
+        var output = this.rawDeflate.compress();
         var pos = output.length;
-        // subarray 分を元にもどす
-        output = new Uint8Array(output.buffer);
-        // expand buffer
-        if (output.length <= pos + 4) {
-            this.output = new Uint8Array(output.length + 4);
-            this.output.set(output);
-            output = this.output;
-        }
-        output = output.subarray(0, pos + 4);
-        b = new ByteStream(output, pos);
+        b.buffer = output;
+        // Restore any subarray
+        b.restoreBuffer();
+        b.setLength(pos + 4);
+        b.p = pos;
         // adler32
         b.writeUintBE(adler);
-        return output;
+        this.output = b.buffer;
+        return this.output;
     }
 }

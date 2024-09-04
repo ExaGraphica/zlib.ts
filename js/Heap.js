@@ -8,8 +8,9 @@ export class Heap {
      * @constructor
      */
     constructor(size) {
-        this.buffer = new Uint16Array(size * 2);
         this.length = 0;
+        this.nodes = 0;
+        this.buffer = new Uint16Array(size * 2);
     }
     /**
      * Get the parent node index
@@ -40,6 +41,7 @@ export class Heap {
         current = this.length;
         heap[this.length++] = value;
         heap[this.length++] = index;
+        this.nodes++;
         // Swapping until the root node is reached
         while (current > 0) {
             parent = this.getParent(current);
@@ -67,17 +69,18 @@ export class Heap {
      *     value: key, length: new heap size}
      */
     pop() {
-        var index, value, heap = this.buffer, swap, current, parent;
-        value = heap[0];
-        index = heap[1];
+        var heap = this.buffer, swap;
+        var value = heap[0];
+        var index = heap[1];
         // Get the value one before this
+        this.nodes--;
         this.length -= 2;
         heap[0] = heap[this.length];
         heap[1] = heap[this.length + 1];
-        parent = 0;
+        var parent = 0;
         // Go down the tree from the root node
         while (true) {
-            current = this.getChild(parent);
+            var current = this.getChild(parent);
             // check range
             if (current >= this.length) {
                 break;

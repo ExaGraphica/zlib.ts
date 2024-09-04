@@ -345,70 +345,67 @@
     }
   },
   "outputs": {
-    "dist/Zlib-main.js": {
+    "dist/Zlib-main.min.js": {
       "imports": [],
       "exports": [],
       "entryPoint": "src/index.ts",
       "inputs": {
         "src/CRC32.ts": {
-          "bytesInOutput": 1917
-        },
-        "src/Constants.ts": {
-          "bytesInOutput": 203
+          "bytesInOutput": 599
         },
         "src/BitStream.ts": {
-          "bytesInOutput": 3124
+          "bytesInOutput": 1079
         },
         "src/Heap.ts": {
-          "bytesInOutput": 2571
+          "bytesInOutput": 700
         },
         "src/Huffman.ts": {
-          "bytesInOutput": 1133
+          "bytesInOutput": 319
         },
         "src/RawInflate.ts": {
-          "bytesInOutput": 15674
+          "bytesInOutput": 5831
         },
         "src/LZ77.ts": {
-          "bytesInOutput": 9839
+          "bytesInOutput": 3778
         },
         "src/Util.ts": {
-          "bytesInOutput": 190
+          "bytesInOutput": 105
         },
         "src/ByteStream.ts": {
-          "bytesInOutput": 2634
+          "bytesInOutput": 1621
         },
         "src/RawDeflate.ts": {
-          "bytesInOutput": 15541
+          "bytesInOutput": 4952
         },
         "src/GZip.ts": {
-          "bytesInOutput": 2930
+          "bytesInOutput": 1392
         },
         "src/GUnzip.ts": {
-          "bytesInOutput": 3835
+          "bytesInOutput": 1748
         },
         "src/ZipCrypto.ts": {
-          "bytesInOutput": 1471
+          "bytesInOutput": 511
         },
         "src/Zip.ts": {
-          "bytesInOutput": 6739
+          "bytesInOutput": 2872
         },
         "src/Unzip.ts": {
-          "bytesInOutput": 7167
+          "bytesInOutput": 3745
         },
         "src/Adler32.ts": {
-          "bytesInOutput": 1312
+          "bytesInOutput": 350
         },
         "src/Deflate.ts": {
-          "bytesInOutput": 1711
+          "bytesInOutput": 643
         },
         "src/Inflate.ts": {
-          "bytesInOutput": 1759
+          "bytesInOutput": 685
         },
         "src/index.ts": {
-          "bytesInOutput": 109
+          "bytesInOutput": 74
         }
       },
-      "bytes": 80278
+      "bytes": 31029
     }
   }
 }

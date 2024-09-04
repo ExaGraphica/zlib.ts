@@ -10,6 +10,29 @@ export class ByteStream {
     set pointer(x) { this.p = x; }
     get offset() { return this.p; }
     set offset(x) { this.p = x; }
+    truncateBuffer(len) {
+        this.buffer = this.buffer.subarray(0, len);
+        this.length = len;
+        return this.buffer;
+    }
+    //Returns an error if len > oldBuffer.length
+    expandLength(len) {
+        const newbuffer = new Uint8Array(len);
+        newbuffer.set(this.buffer);
+        this.buffer = newbuffer;
+        this.length = len;
+        return this.buffer;
+    }
+    setLength(len) {
+        if (len > this.length)
+            this.expandLength(len);
+        else
+            this.truncateBuffer(len);
+    }
+    // Trick to restore any subarray
+    restoreBuffer() {
+        this.buffer = new Uint8Array(this.buffer.buffer);
+    }
     readByte() {
         return this.buffer[this.p++];
     }

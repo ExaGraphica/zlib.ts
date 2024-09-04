@@ -45,6 +45,7 @@ export class GZip {
         this.ip = 0; //input buffer pointer.
         this.output = null; //output buffer.
         this.op = 0; //output buffer pointer.
+        this.crc32 = null;
         this.filename = '';
         this.comment = '';
         this.input = input;
@@ -142,8 +143,8 @@ export class GZip {
         }
         var b = new ByteStream(output, op);
         // crc32
-        var crc32 = CRC32.create(input);
-        b.writeUint(crc32);
+        this.crc32 = CRC32.create(input);
+        b.writeUint(this.crc32);
         // input size
         var il = input.length;
         b.writeUint(il);

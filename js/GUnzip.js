@@ -10,8 +10,9 @@ export class GUnzip {
      */
     constructor(input) {
         this.ip = 0; //input buffer pointer.
-        this.member = [];
+        this.members = [];
         this.decompressed = false;
+        this.crc32 = null;
         this.input = input;
     }
     /**
@@ -20,7 +21,7 @@ export class GUnzip {
     getMembers() {
         if (!this.decompressed)
             this.decompress();
-        return this.member.slice();
+        return this.members.slice();
     }
     ;
     /**
@@ -44,7 +45,7 @@ export class GUnzip {
         member.id1 = b.readByte(),
             member.id2 = b.readByte();
         // check signature
-        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[2])) {
+        if ((member.id1 !== GZipMagicNumber[0]) || (member.id2 !== GZipMagicNumber[1])) {
             throw new Error('invalid file signature:' + member.id1 + ',' + member.id2);
         }
         // check compression method
@@ -115,7 +116,8 @@ export class GUnzip {
         b = new ByteStream(input, rawinflate.ip);
         // crc32
         var crc32 = b.readUint();
-        if (CRC32.create(inflated) !== crc32) {
+        this.crc32 = CRC32.create(inflated);
+        if (this.crc32 !== crc32) {
             throw new Error('invalid CRC-32 checksum: 0x' +
                 CRC32.create(inflated).toString(16) + ' / 0x' + crc32.toString(16));
         }
@@ -125,7 +127,7 @@ export class GUnzip {
             throw new Error('invalid input size: ' +
                 (inflated.length & 0xFFFFFFFF) + ' / ' + isize);
         }
-        this.member.push(member);
+        this.members.push(member);
         this.ip = b.p;
     }
     /**
@@ -137,7 +139,7 @@ export class GUnzip {
     }
     ;
     concatMember() {
-        var member = this.member;
+        var member = this.members;
         var size = 0;
         for (var i = 0; i < member.length; ++i) {
             size += member[i].data.length;

@@ -181,8 +181,9 @@
      * @constructor
      */
     constructor(size) {
-      this.buffer = new Uint16Array(size * 2);
       this.length = 0;
+      this.nodes = 0;
+      this.buffer = new Uint16Array(size * 2);
     }
     /**
      * Get the parent node index
@@ -211,6 +212,7 @@
       current = this.length;
       heap[this.length++] = value;
       heap[this.length++] = index;
+      this.nodes++;
       while (current > 0) {
         parent = this.getParent(current);
         if (heap[current] > heap[parent]) {
@@ -233,15 +235,16 @@
      *     value: key, length: new heap size}
      */
     pop() {
-      var index, value, heap = this.buffer, swap, current, parent;
-      value = heap[0];
-      index = heap[1];
+      var heap = this.buffer, swap;
+      var value = heap[0];
+      var index = heap[1];
+      this.nodes--;
       this.length -= 2;
       heap[0] = heap[this.length];
       heap[1] = heap[this.length + 1];
-      parent = 0;
+      var parent = 0;
       while (true) {
-        current = this.getChild(parent);
+        var current = this.getChild(parent);
         if (current >= this.length) {
           break;
         }
@@ -852,7 +855,7 @@
       ratio = (fixRatio ?? ratio) + addRatio;
       if (ratio < 2) {
         var maxHuffCode = (input.length - this.ip) / this.currentLitlenTable[2];
-        var maxInflateSize = Math.floor(maxHuffCode / 2 * 258);
+        var maxInflateSize = Math.floor(maxHuffCode * 129);
         newSize = maxInflateSize < output.length ? output.length + maxInflateSize : output.length << 1;
       } else {
         newSize = output.length * ratio;
@@ -907,10 +910,445 @@
     }
   };
 
-  // src/RawDeflate.ts
+  // src/LZ77.ts
   var LZ77MinLength = 3;
   var LZ77MaxLength = 258;
   var WindowSize = 32768;
+  var LZ77Array = {
+    /**
+     * Array in the form of [code, extension bit, extension bit length]
+     */
+    getLengthCode(length) {
+      switch (true) {
+        case length === 3:
+          return [257, length - 3, 0];
+          break;
+        case length === 4:
+          return [258, length - 4, 0];
+          break;
+        case length === 5:
+          return [259, length - 5, 0];
+          break;
+        case length === 6:
+          return [260, length - 6, 0];
+          break;
+        case length === 7:
+          return [261, length - 7, 0];
+          break;
+        case length === 8:
+          return [262, length - 8, 0];
+          break;
+        case length === 9:
+          return [263, length - 9, 0];
+          break;
+        case length === 10:
+          return [264, length - 10, 0];
+          break;
+        case length <= 12:
+          return [265, length - 11, 1];
+          break;
+        case length <= 14:
+          return [266, length - 13, 1];
+          break;
+        case length <= 16:
+          return [267, length - 15, 1];
+          break;
+        case length <= 18:
+          return [268, length - 17, 1];
+          break;
+        case length <= 22:
+          return [269, length - 19, 2];
+          break;
+        case length <= 26:
+          return [270, length - 23, 2];
+          break;
+        case length <= 30:
+          return [271, length - 27, 2];
+          break;
+        case length <= 34:
+          return [272, length - 31, 2];
+          break;
+        case length <= 42:
+          return [273, length - 35, 3];
+          break;
+        case length <= 50:
+          return [274, length - 43, 3];
+          break;
+        case length <= 58:
+          return [275, length - 51, 3];
+          break;
+        case length <= 66:
+          return [276, length - 59, 3];
+          break;
+        case length <= 82:
+          return [277, length - 67, 4];
+          break;
+        case length <= 98:
+          return [278, length - 83, 4];
+          break;
+        case length <= 114:
+          return [279, length - 99, 4];
+          break;
+        case length <= 130:
+          return [280, length - 115, 4];
+          break;
+        case length <= 162:
+          return [281, length - 131, 5];
+          break;
+        case length <= 194:
+          return [282, length - 163, 5];
+          break;
+        case length <= 226:
+          return [283, length - 195, 5];
+          break;
+        case length <= 257:
+          return [284, length - 227, 5];
+          break;
+        case length === 258:
+          return [285, length - 258, 0];
+          break;
+        default:
+          throw "invalid length: " + length;
+      }
+    },
+    //Array of [code, extension bit, extension bit length].
+    getDistanceCode(dist) {
+      switch (true) {
+        case dist === 1:
+          return [0, dist - 1, 0];
+          break;
+        case dist === 2:
+          return [1, dist - 2, 0];
+          break;
+        case dist === 3:
+          return [2, dist - 3, 0];
+          break;
+        case dist === 4:
+          return [3, dist - 4, 0];
+          break;
+        case dist <= 6:
+          return [4, dist - 5, 1];
+          break;
+        case dist <= 8:
+          return [5, dist - 7, 1];
+          break;
+        case dist <= 12:
+          return [6, dist - 9, 2];
+          break;
+        case dist <= 16:
+          return [7, dist - 13, 2];
+          break;
+        case dist <= 24:
+          return [8, dist - 17, 3];
+          break;
+        case dist <= 32:
+          return [9, dist - 25, 3];
+          break;
+        case dist <= 48:
+          return [10, dist - 33, 4];
+          break;
+        case dist <= 64:
+          return [11, dist - 49, 4];
+          break;
+        case dist <= 96:
+          return [12, dist - 65, 5];
+          break;
+        case dist <= 128:
+          return [13, dist - 97, 5];
+          break;
+        case dist <= 192:
+          return [14, dist - 129, 6];
+          break;
+        case dist <= 256:
+          return [15, dist - 193, 6];
+          break;
+        case dist <= 384:
+          return [16, dist - 257, 7];
+          break;
+        case dist <= 512:
+          return [17, dist - 385, 7];
+          break;
+        case dist <= 768:
+          return [18, dist - 513, 8];
+          break;
+        case dist <= 1024:
+          return [19, dist - 769, 8];
+          break;
+        case dist <= 1536:
+          return [20, dist - 1025, 9];
+          break;
+        case dist <= 2048:
+          return [21, dist - 1537, 9];
+          break;
+        case dist <= 3072:
+          return [22, dist - 2049, 10];
+          break;
+        case dist <= 4096:
+          return [23, dist - 3073, 10];
+          break;
+        case dist <= 6144:
+          return [24, dist - 4097, 11];
+          break;
+        case dist <= 8192:
+          return [25, dist - 6145, 11];
+          break;
+        case dist <= 12288:
+          return [26, dist - 8193, 12];
+          break;
+        case dist <= 16384:
+          return [27, dist - 12289, 12];
+          break;
+        case dist <= 24576:
+          return [28, dist - 16385, 13];
+          break;
+        case dist <= 32768:
+          return [29, dist - 24577, 13];
+          break;
+        default:
+          throw "invalid distance";
+      }
+    },
+    /**
+     * Returns match info as an array encoded in LZ77
+     * An LZ77 Array is as follows:
+     * [ 
+     *    CODE, EXTRA-BIT-LEN, EXTRA, //Length code
+     *    CODE, EXTRA-BIT-LEN, EXTRA //Distance code
+     * ]
+     */
+    create(match) {
+      return this.getLengthCode(match.len).concat(this.getDistanceCode(match.backwardDistance));
+    }
+  };
+  var LZ77 = class {
+    constructor(input, lazy) {
+      this.table = {};
+      //LZ77 buffer
+      this.pos = 0;
+      this.prevMatch = null;
+      //previous longest match
+      this.skipLength = 0;
+      this.lazy = 0;
+      this.input = input;
+      this.output = new Uint16Array(input.length * 2);
+      this.lazy = lazy;
+      this.freqsLitLen = new Uint32Array(286);
+      this.freqsLitLen[256] = 1;
+      this.freqsDist = new Uint32Array(30);
+    }
+    writeNum(n) {
+      this.output[this.pos++] = n;
+    }
+    writeMatch(match, offset) {
+      var arr = LZ77Array.create(match);
+      for (var i = 0; i < arr.length; i++) {
+        this.writeNum(arr[i]);
+      }
+      this.freqsLitLen[arr[0]]++;
+      this.freqsDist[arr[3]]++;
+      this.skipLength = match.len + offset - 1;
+      this.prevMatch = null;
+    }
+    // Search for the longest match from the end
+    maxMatchTest(match1, match2, len) {
+      for (var j = len; j > LZ77MinLength; j--) {
+        if (this.input[match1 + j - 1] !== this.input[match2 + j - 1]) return false;
+      }
+      return true;
+    }
+    //Find the longest match among match candidates
+    searchLongestMatch(position, matchList) {
+      var currentMatch = matchList[matchList.length], matchMax = 0, inputLength = this.input.length;
+      for (var i = 0; i < matchList.length; i++) {
+        var match = matchList[matchList.length - i - 1];
+        var matchLength = LZ77MinLength;
+        if (matchMax > LZ77MinLength) {
+          var j = matchMax;
+          if (!this.maxMatchTest(match, position, matchMax)) continue;
+          matchLength = matchMax;
+        }
+        while (matchLength < LZ77MaxLength && position + matchLength < inputLength && this.input[match + matchLength] == this.input[position + matchLength]) {
+          matchLength++;
+        }
+        if (matchLength > matchMax) {
+          currentMatch = match;
+          matchMax = matchLength;
+        }
+        if (matchLength == LZ77MaxLength) break;
+      }
+      return { len: matchMax, backwardDistance: position - currentMatch };
+    }
+    encode() {
+      var table = {};
+      var position;
+      var length = this.input.length;
+      for (position = 0; position < length; ++position) {
+        var matchKey = 0;
+        for (var i = 0; i < LZ77MinLength; i++) {
+          if (position + i === length) break;
+          matchKey = matchKey << 8 | this.input[position + i];
+        }
+        if (table[matchKey] === void 0) {
+          table[matchKey] = [];
+        }
+        var matchList = table[matchKey];
+        if (this.skipLength-- > 0) {
+          matchList.push(position);
+          continue;
+        }
+        while (matchList.length > 0 && position - matchList[0] > WindowSize) {
+          matchList.shift();
+        }
+        if (position + LZ77MinLength >= length) {
+          if (this.prevMatch) {
+            this.writeMatch(this.prevMatch, -1);
+          }
+          for (var i = position; i < length; i++) {
+            var tmp = this.input[i];
+            this.writeNum(tmp);
+            this.freqsLitLen[tmp]++;
+          }
+          break;
+        }
+        if (matchList.length > 0) {
+          var longestMatch = this.searchLongestMatch(position, matchList);
+          if (this.prevMatch) {
+            if (this.prevMatch.len < longestMatch.len) {
+              tmp = this.input[position - 1];
+              this.writeNum(tmp);
+              this.freqsLitLen[tmp]++;
+              this.writeMatch(longestMatch, 0);
+            } else {
+              this.writeMatch(this.prevMatch, -1);
+            }
+          } else if (longestMatch.len < this.lazy) {
+            this.prevMatch = longestMatch;
+          } else {
+            this.writeMatch(longestMatch, 0);
+          }
+        } else if (this.prevMatch) {
+          this.writeMatch(this.prevMatch, -1);
+        } else {
+          var tmp = this.input[position];
+          this.writeNum(tmp);
+          this.freqsLitLen[tmp]++;
+        }
+        matchList.push(position);
+      }
+      this.writeNum(256);
+      this.freqsLitLen[256]++;
+      this.output = this.output.subarray(0, this.pos);
+      return this.output;
+    }
+  };
+
+  // src/Util.ts
+  function stringToByteArray(str) {
+    var tmp = new Uint8Array(str.length);
+    for (var i = 0; i < tmp.length; i++) {
+      tmp[i] = str[i].charCodeAt(0) & 255;
+    }
+    return tmp;
+  }
+
+  // src/ByteStream.ts
+  var ByteStream = class {
+    constructor(buffer, pointer = 0) {
+      this.buffer = buffer;
+      this.p = pointer;
+      this.length = buffer.length;
+    }
+    get pointer() {
+      return this.p;
+    }
+    set pointer(x) {
+      this.p = x;
+    }
+    get offset() {
+      return this.p;
+    }
+    set offset(x) {
+      this.p = x;
+    }
+    truncateBuffer(len) {
+      this.buffer = this.buffer.subarray(0, len);
+      this.length = len;
+      return this.buffer;
+    }
+    //Returns an error if len > oldBuffer.length
+    expandLength(len) {
+      const newbuffer = new Uint8Array(len);
+      newbuffer.set(this.buffer);
+      this.buffer = newbuffer;
+      this.length = len;
+      return this.buffer;
+    }
+    setLength(len) {
+      if (len > this.length) this.expandLength(len);
+      else this.truncateBuffer(len);
+    }
+    // Trick to restore any subarray
+    restoreBuffer() {
+      this.buffer = new Uint8Array(this.buffer.buffer);
+    }
+    readByte() {
+      return this.buffer[this.p++];
+    }
+    writeByte(byte) {
+      this.buffer[this.p++] = byte;
+    }
+    readShort() {
+      return this.buffer[this.p++] | this.buffer[this.p++] << 8;
+    }
+    writeShort(short) {
+      this.buffer[this.p++] = short & 255;
+      this.buffer[this.p++] = short >>> 8 & 255;
+    }
+    readUint() {
+      return (this.buffer[this.p++] | this.buffer[this.p++] << 8 | this.buffer[this.p++] << 16 | this.buffer[this.p++] << 24) >>> 0;
+    }
+    writeUint(uint) {
+      this.buffer[this.p++] = uint & 255;
+      this.buffer[this.p++] = uint >>> 8 & 255;
+      this.buffer[this.p++] = uint >>> 16 & 255;
+      this.buffer[this.p++] = uint >>> 24 & 255;
+    }
+    readUintBE() {
+      return (this.buffer[this.p++] << 24 | this.buffer[this.p++] << 16 | this.buffer[this.p++] << 8 | this.buffer[this.p++]) >>> 0;
+    }
+    writeUintBE(uint) {
+      this.buffer[this.p++] = uint >>> 24 & 255;
+      this.buffer[this.p++] = uint >>> 16 & 255;
+      this.buffer[this.p++] = uint >>> 8 & 255;
+      this.buffer[this.p++] = uint & 255;
+    }
+    readArray(len) {
+      return this.buffer.subarray(this.p, this.p += len);
+    }
+    writeArray(buf) {
+      this.buffer.set(buf, this.p);
+      this.p += buf.length;
+    }
+    readString(len) {
+      return new TextDecoder().decode(this.readArray(len));
+    }
+    writeString(str) {
+      this.writeArray(new TextEncoder().encode(str));
+    }
+    readAscii(len) {
+      var s = "";
+      var arr = this.readArray(len);
+      arr.forEach((n) => {
+        s += String.fromCharCode(n);
+      });
+      return s;
+    }
+    writeAscii(str) {
+      this.writeArray(stringToByteArray(str));
+    }
+  };
+
+  // src/RawDeflate.ts
   var MaxCodeLength = 16;
   var HUFMAX = 286;
   var FixedHuffmanTable = function() {
@@ -935,253 +1373,6 @@
     }
     return table;
   }();
-  var LZ77Match = class _LZ77Match {
-    //backward distance.
-    /**
-     * Match Info
-     * @param {!number} length Match length.
-     * @param {!number} backwardDistance Backward Distance.
-     * @constructor
-     */
-    constructor(length, backwardDistance) {
-      this.length = length;
-      this.backwardDistance = backwardDistance;
-    }
-    static {
-      /**
-       * Length code table.
-       * Array in the form of [code, extension bit, extension bit length]
-       */
-      this.LengthCodeTable = function() {
-        var table = [];
-        var i;
-        var c;
-        for (i = 3; i <= 258; i++) {
-          c = code(i);
-          table[i] = c[2] << 24 | c[1] << 16 | c[0];
-        }
-        function code(length) {
-          switch (true) {
-            case length === 3:
-              return [257, length - 3, 0];
-              break;
-            case length === 4:
-              return [258, length - 4, 0];
-              break;
-            case length === 5:
-              return [259, length - 5, 0];
-              break;
-            case length === 6:
-              return [260, length - 6, 0];
-              break;
-            case length === 7:
-              return [261, length - 7, 0];
-              break;
-            case length === 8:
-              return [262, length - 8, 0];
-              break;
-            case length === 9:
-              return [263, length - 9, 0];
-              break;
-            case length === 10:
-              return [264, length - 10, 0];
-              break;
-            case length <= 12:
-              return [265, length - 11, 1];
-              break;
-            case length <= 14:
-              return [266, length - 13, 1];
-              break;
-            case length <= 16:
-              return [267, length - 15, 1];
-              break;
-            case length <= 18:
-              return [268, length - 17, 1];
-              break;
-            case length <= 22:
-              return [269, length - 19, 2];
-              break;
-            case length <= 26:
-              return [270, length - 23, 2];
-              break;
-            case length <= 30:
-              return [271, length - 27, 2];
-              break;
-            case length <= 34:
-              return [272, length - 31, 2];
-              break;
-            case length <= 42:
-              return [273, length - 35, 3];
-              break;
-            case length <= 50:
-              return [274, length - 43, 3];
-              break;
-            case length <= 58:
-              return [275, length - 51, 3];
-              break;
-            case length <= 66:
-              return [276, length - 59, 3];
-              break;
-            case length <= 82:
-              return [277, length - 67, 4];
-              break;
-            case length <= 98:
-              return [278, length - 83, 4];
-              break;
-            case length <= 114:
-              return [279, length - 99, 4];
-              break;
-            case length <= 130:
-              return [280, length - 115, 4];
-              break;
-            case length <= 162:
-              return [281, length - 131, 5];
-              break;
-            case length <= 194:
-              return [282, length - 163, 5];
-              break;
-            case length <= 226:
-              return [283, length - 195, 5];
-              break;
-            case length <= 257:
-              return [284, length - 227, 5];
-              break;
-            case length === 258:
-              return [285, length - 258, 0];
-              break;
-            default:
-              throw "invalid length: " + length;
-          }
-        }
-        return new Uint32Array(table);
-      }();
-    }
-    /**
-     * Distance code table
-     * @param {!number} dist Distance.
-     * @return {!Array<number>} Array of [code, extension bit, extension bit length].
-     * @private
-     */
-    getDistanceCode(dist) {
-      var r;
-      switch (true) {
-        case dist === 1:
-          r = [0, dist - 1, 0];
-          break;
-        case dist === 2:
-          r = [1, dist - 2, 0];
-          break;
-        case dist === 3:
-          r = [2, dist - 3, 0];
-          break;
-        case dist === 4:
-          r = [3, dist - 4, 0];
-          break;
-        case dist <= 6:
-          r = [4, dist - 5, 1];
-          break;
-        case dist <= 8:
-          r = [5, dist - 7, 1];
-          break;
-        case dist <= 12:
-          r = [6, dist - 9, 2];
-          break;
-        case dist <= 16:
-          r = [7, dist - 13, 2];
-          break;
-        case dist <= 24:
-          r = [8, dist - 17, 3];
-          break;
-        case dist <= 32:
-          r = [9, dist - 25, 3];
-          break;
-        case dist <= 48:
-          r = [10, dist - 33, 4];
-          break;
-        case dist <= 64:
-          r = [11, dist - 49, 4];
-          break;
-        case dist <= 96:
-          r = [12, dist - 65, 5];
-          break;
-        case dist <= 128:
-          r = [13, dist - 97, 5];
-          break;
-        case dist <= 192:
-          r = [14, dist - 129, 6];
-          break;
-        case dist <= 256:
-          r = [15, dist - 193, 6];
-          break;
-        case dist <= 384:
-          r = [16, dist - 257, 7];
-          break;
-        case dist <= 512:
-          r = [17, dist - 385, 7];
-          break;
-        case dist <= 768:
-          r = [18, dist - 513, 8];
-          break;
-        case dist <= 1024:
-          r = [19, dist - 769, 8];
-          break;
-        case dist <= 1536:
-          r = [20, dist - 1025, 9];
-          break;
-        case dist <= 2048:
-          r = [21, dist - 1537, 9];
-          break;
-        case dist <= 3072:
-          r = [22, dist - 2049, 10];
-          break;
-        case dist <= 4096:
-          r = [23, dist - 3073, 10];
-          break;
-        case dist <= 6144:
-          r = [24, dist - 4097, 11];
-          break;
-        case dist <= 8192:
-          r = [25, dist - 6145, 11];
-          break;
-        case dist <= 12288:
-          r = [26, dist - 8193, 12];
-          break;
-        case dist <= 16384:
-          r = [27, dist - 12289, 12];
-          break;
-        case dist <= 24576:
-          r = [28, dist - 16385, 13];
-          break;
-        case dist <= 32768:
-          r = [29, dist - 24577, 13];
-          break;
-        default:
-          throw "invalid distance";
-      }
-      return r;
-    }
-    /**
-     * Returns match info as an array encoded in LZ77
-     * An LZ77 Array is as follows:
-     * [ 
-     *    CODE, EXTRA-BIT-LEN, EXTRA, //Length code
-     *    CODE, EXTRA-BIT-LEN, EXTRA //Distance code
-     * ]
-     * @return {!Array<number>} LZ77 array.
-     */
-    toLZ77Array() {
-      var code1 = _LZ77Match.LengthCodeTable[this.length];
-      var code2 = this.getDistanceCode(this.backwardDistance);
-      return [
-        code1 & 65535,
-        code1 >>> 16 & 255,
-        code1 >>> 24,
-        code2[0],
-        code2[1],
-        code2[2]
-      ];
-    }
-  };
   var RawDeflate = class {
     //pos output buffer position.
     /**
@@ -1195,8 +1386,6 @@
      * Any variables referencing the given output buffer will have to be updated after compression or conversion.
      */
     constructor(input, opts = {}) {
-      this.freqsLitLen = null;
-      this.freqsDist = null;
       //output output buffer.
       this.op = 0;
       this.input = input instanceof Uint8Array ? input : new Uint8Array(input);
@@ -1239,31 +1428,28 @@
     }
     /**
      * Create uncompressed block
-     * @param {!(Array<number>|Uint8Array)} blockArray Block data
+     * @param {!Uint8Array} blockArray Block data
      * @param {!boolean} isFinalBlock Is this the last block?
      * @return {!Uint8Array} Uncompressed block
      */
     makeNocompressBlock(blockArray, isFinalBlock) {
       var output = this.output;
-      var op = this.op;
       output = new Uint8Array(this.output.buffer);
-      while (output.length <= op + blockArray.length + 5) {
-        output = new Uint8Array(output.length << 1);
+      var b = new ByteStream(output, this.op);
+      var len = output.length;
+      while (len <= this.op + blockArray.length + 5) {
+        len = len << 1;
       }
-      output.set(this.output);
+      b.expandLength(len);
       var btype = 0 /* NONE */;
-      output[op++] = (isFinalBlock ? 1 : 0) | btype << 1;
+      b.writeByte((isFinalBlock ? 1 : 0) | btype << 1);
       var len = blockArray.length;
-      var nlen = ~len + 65536 & 65535;
-      output[op++] = len & 255;
-      output[op++] = len >>> 8 & 255;
-      output[op++] = nlen & 255;
-      output[op++] = nlen >>> 8 & 255;
-      output.set(blockArray, op);
-      op += blockArray.length;
-      output = output.subarray(0, op);
-      this.op = op;
-      this.output = output;
+      var nlen = len ^ 65535;
+      b.writeShort(len);
+      b.writeShort(nlen);
+      b.writeArray(blockArray);
+      b.truncateBuffer(b.p);
+      this.output = b.buffer, this.op = b.p;
       return output;
     }
     /**
@@ -1276,8 +1462,9 @@
       var stream = new BitStream(new Uint8Array(this.output.buffer), this.op);
       stream.writeBits(isFinalBlock ? 1 : 0, 1, true);
       stream.writeBits(1 /* FIXED */, 2, true);
-      var data = this.LZ77(blockArray);
-      this.fixedHuffman(data, stream);
+      var lz = new LZ77(blockArray, this.lazy);
+      lz.encode();
+      this.fixedHuffman(lz, stream);
       return stream.finish();
     }
     /**
@@ -1290,10 +1477,11 @@
       var stream = new BitStream(new Uint8Array(this.output.buffer), this.op);
       stream.writeBits(isFinalBlock ? 1 : 0, 1, true);
       stream.writeBits(2 /* DYNAMIC */, 2, true);
-      var data = this.LZ77(blockArray);
-      var litLenLengths = this.getLengths(this.freqsLitLen, 15);
+      var lz = new LZ77(blockArray, this.lazy);
+      var lzBuffer = lz.encode();
+      var litLenLengths = this.getLengths(lz.freqsLitLen, 15);
       var litLenCodes = this.getCodesFromLengths(litLenLengths);
-      var distLengths = this.getLengths(this.freqsDist, 7);
+      var distLengths = this.getLengths(lz.freqsDist, 7);
       var distCodes = this.getCodesFromLengths(distLengths);
       var hlit, hdist;
       for (hlit = 286; hlit > 257 && litLenLengths[hlit - 1] === 0; hlit--) {
@@ -1338,7 +1526,7 @@
         }
       }
       this.dynamicHuffman(
-        data,
+        lzBuffer,
         [litLenCodes, litLenLengths],
         [distCodes, distLengths],
         stream
@@ -1379,145 +1567,21 @@
      * @param {!BitStream} stream Write to BitStream.
      * @return {!BitStream} Huffman-encoded BitStream object.
      */
-    fixedHuffman(dataArray, stream) {
-      for (var index = 0; index < dataArray.length; index++) {
-        var literal = dataArray[index];
-        BitStream.prototype.writeBits.apply(
-          stream,
-          FixedHuffmanTable[literal]
-        );
+    fixedHuffman(lz, stream) {
+      var lzOutput = lz.output;
+      for (var index = 0; index < lzOutput.length; index++) {
+        var literal = lzOutput[index];
+        var huffCode = FixedHuffmanTable[literal];
+        stream.writeBits(huffCode[0], huffCode[1]);
         if (literal > 256) {
-          stream.writeBits(dataArray[++index], dataArray[++index], true);
-          stream.writeBits(dataArray[++index], 5);
-          stream.writeBits(dataArray[++index], dataArray[++index], true);
+          stream.writeBits(lzOutput[++index], lzOutput[++index], true);
+          stream.writeBits(lzOutput[++index], 5);
+          stream.writeBits(lzOutput[++index], lzOutput[++index], true);
         } else if (literal === 256) {
           break;
         }
       }
       return stream;
-    }
-    /**
-     * LZ77 Implementation
-     * @param {!(Array<number>|Uint8Array)} dataArray LZ77 data to encode
-     * @return {!Uint16Array} LZ77-encoded sequence
-     */
-    LZ77(dataArray) {
-      var table = {};
-      var prevMatch = null;
-      var LZ77buf = new Uint16Array(dataArray.length * 2);
-      var pos = 0;
-      var skipLength = 0;
-      var freqsDist = new Uint32Array(30);
-      var lazy = this.lazy;
-      var tmp;
-      var freqsLitLen = new Uint32Array(286);
-      freqsLitLen[256] = 1;
-      function writeMatch(match, offset) {
-        var LZ77Array = match.toLZ77Array();
-        for (var i2 = 0; i2 < LZ77Array.length; ++i2) {
-          LZ77buf[pos++] = LZ77Array[i2];
-        }
-        freqsLitLen[LZ77Array[0]]++;
-        freqsDist[LZ77Array[3]]++;
-        skipLength = match.length + offset - 1;
-        prevMatch = null;
-      }
-      var position;
-      var length = dataArray.length;
-      for (position = 0; position < length; ++position) {
-        var matchKey = 0;
-        for (var i = 0; i < LZ77MinLength; ++i) {
-          if (position + i === length) break;
-          matchKey = matchKey << 8 | dataArray[position + i];
-        }
-        if (table[matchKey] === void 0) {
-          table[matchKey] = [];
-        }
-        var matchList = table[matchKey];
-        if (skipLength-- > 0) {
-          matchList.push(position);
-          continue;
-        }
-        while (matchList.length > 0 && position - matchList[0] > WindowSize) {
-          matchList.shift();
-        }
-        i;
-        if (position + LZ77MinLength >= length) {
-          if (prevMatch) {
-            writeMatch(prevMatch, -1);
-          }
-          for (var i = 0, il = length - position; i < il; ++i) {
-            tmp = dataArray[position + i];
-            LZ77buf[pos++] = tmp;
-            ++freqsLitLen[tmp];
-          }
-          break;
-        }
-        if (matchList.length > 0) {
-          var longestMatch = this.searchLongestMatch(dataArray, position, matchList);
-          if (prevMatch) {
-            if (prevMatch.length < longestMatch.length) {
-              tmp = dataArray[position - 1];
-              LZ77buf[pos++] = tmp;
-              ++freqsLitLen[tmp];
-              writeMatch(longestMatch, 0);
-            } else {
-              writeMatch(prevMatch, -1);
-            }
-          } else if (longestMatch.length < lazy) {
-            prevMatch = longestMatch;
-          } else {
-            writeMatch(longestMatch, 0);
-          }
-        } else if (prevMatch) {
-          writeMatch(prevMatch, -1);
-        } else {
-          tmp = dataArray[position];
-          LZ77buf[pos++] = tmp;
-          ++freqsLitLen[tmp];
-        }
-        matchList.push(position);
-      }
-      LZ77buf[pos++] = 256;
-      freqsLitLen[256]++;
-      this.freqsLitLen = freqsLitLen;
-      this.freqsDist = freqsDist;
-      return LZ77buf.subarray(0, pos);
-    }
-    /**
-     * Find the longest match among match candidates
-     * @param {!Object} data plain data byte array.
-     * @param {!number} position plain data byte array position.
-     * @param {!Array<number>} matchList Array of candidate matches.
-     * @return {!LZ77Match} The longest and shortest match options
-     * @private
-     */
-    searchLongestMatch(data, position, matchList) {
-      var currentMatch, matchMax = 0, dl = data.length;
-      permatch:
-        for (var i = 0; i < matchList.length; i++) {
-          var match = matchList[matchList.length - i - 1];
-          var matchLength = LZ77MinLength;
-          if (matchMax > LZ77MinLength) {
-            for (var j = matchMax; j > LZ77MinLength; j--) {
-              if (data[match + j - 1] !== data[position + j - 1]) {
-                continue permatch;
-              }
-            }
-            matchLength = matchMax;
-          }
-          while (matchLength < LZ77MaxLength && position + matchLength < dl && data[match + matchLength] === data[position + matchLength]) {
-            ++matchLength;
-          }
-          if (matchLength > matchMax) {
-            currentMatch = match;
-            matchMax = matchLength;
-          }
-          if (matchLength === LZ77MaxLength) {
-            break;
-          }
-        }
-      return new LZ77Match(matchMax, position - currentMatch);
     }
     /**
      * Create Tree-Transmit Symbols
@@ -1613,14 +1677,14 @@
           heap.push(i, freqs[i]);
         }
       }
-      var nodes = new Array(heap.length / 2);
-      var values = new Uint32Array(heap.length / 2);
+      var nodes = new Array(heap.nodes);
+      var values = new Uint32Array(heap.nodes);
       if (nodes.length === 1) {
         length[heap.pop().index] = 1;
         return length;
       }
-      var heapLength = heap.length / 2;
-      for (var i = 0; i < heapLength; ++i) {
+      var heapNodes = heap.nodes;
+      for (var i = 0; i < heapNodes; ++i) {
         nodes[i] = heap.pop();
         values[i] = nodes[i].value;
       }
@@ -1632,6 +1696,7 @@
     }
     /**
      * Reverse Package Merge Algorithm.
+     * https://gist.github.com/imaya/3985581
      * @param {!Uint32Array} freqs sorted probability.
      * @param {number} symbols number of symbols.
      * @param {number} limit code length limit.
@@ -1639,64 +1704,57 @@
      */
     reversePackageMerge(freqs, symbols, limit) {
       var minimumCost = new Uint16Array(limit);
-      var flag = new Uint8Array(limit);
-      var codeLength = new Uint8Array(symbols);
+      var flag = new Array(limit);
+      var codeLength = new Uint8Array(symbols).fill(limit);
       var value = new Array(limit);
       var type = new Array(limit);
-      var currentPosition = new Array(limit);
+      var currentPosition = new Array(limit).fill(0);
       function takePackage(j2) {
         var x = type[j2][currentPosition[j2]];
         if (x === symbols) {
           takePackage(j2 + 1);
           takePackage(j2 + 1);
         } else {
-          --codeLength[x];
+          codeLength[x]--;
         }
-        ++currentPosition[j2];
+        currentPosition[j2]++;
       }
       minimumCost[limit - 1] = symbols;
       var excess = (1 << limit) - symbols;
       var half = 1 << limit - 1;
       for (var j = 0; j < limit; ++j) {
         if (excess < half) {
-          flag[j] = 0;
+          flag[j] = false;
         } else {
-          flag[j] = 1;
+          flag[j] = true;
           excess -= half;
         }
         excess <<= 1;
-        minimumCost[limit - 2 - j] = (minimumCost[limit - 1 - j] / 2 | 0) + symbols;
+        minimumCost[limit - 2 - j] = (minimumCost[limit - 1 - j] >>> 1) + symbols;
       }
-      minimumCost[0] = flag[0];
+      minimumCost[0] = Number(flag[0]);
       value[0] = new Array(minimumCost[0]);
       type[0] = new Array(minimumCost[0]);
       for (var j = 1; j < limit; ++j) {
-        if (minimumCost[j] > 2 * minimumCost[j - 1] + flag[j]) {
-          minimumCost[j] = 2 * minimumCost[j - 1] + flag[j];
+        if (minimumCost[j] > 2 * minimumCost[j - 1] + Number(flag[j])) {
+          minimumCost[j] = 2 * minimumCost[j - 1] + Number(flag[j]);
         }
         value[j] = new Array(minimumCost[j]);
         type[j] = new Array(minimumCost[j]);
-      }
-      for (var i = 0; i < symbols; ++i) {
-        codeLength[i] = limit;
       }
       for (var t = 0; t < minimumCost[limit - 1]; ++t) {
         value[limit - 1][t] = freqs[t];
         type[limit - 1][t] = t;
       }
-      for (var i = 0; i < limit; ++i) {
-        currentPosition[i] = 0;
+      if (flag[limit - 1]) {
+        codeLength[0]--;
+        currentPosition[limit - 1]++;
       }
-      if (flag[limit - 1] === 1) {
-        --codeLength[0];
-        ++currentPosition[limit - 1];
-      }
-      for (var j = limit - 2; j >= 0; --j) {
+      for (var j = limit - 2; j >= 0; j--) {
         var i = 0;
-        var weight = 0;
         var next = currentPosition[j + 1];
         for (var t = 0; t < minimumCost[j]; t++) {
-          weight = value[j + 1][next] + value[j + 1][next + 1];
+          var weight = value[j + 1][next] + value[j + 1][next + 1];
           if (weight > freqs[i]) {
             value[j][t] = weight;
             type[j][t] = symbols;
@@ -1704,13 +1762,11 @@
           } else {
             value[j][t] = freqs[i];
             type[j][t] = i;
-            ++i;
+            i++;
           }
         }
         currentPosition[j] = 0;
-        if (flag[j] === 1) {
-          takePackage(j);
-        }
+        if (flag[j]) takePackage(j);
       }
       return codeLength;
     }
@@ -1722,110 +1778,25 @@
      * @private
      */
     getCodesFromLengths(lengths) {
-      var codes = new Uint16Array(lengths.length), count = [], startCode = [], code = 0, il, j, m;
+      var codes = new Uint16Array(lengths.length), count = [], startCode = [], code = 0, j, m;
       for (var i = 0; i < lengths.length; i++) {
-        count[lengths[i]] = (count[lengths[i]] | 0) + 1;
+        count[lengths[i]] = (count[lengths[i]] ?? 0) + 1;
       }
       for (var i = 1; i <= MaxCodeLength; i++) {
         startCode[i] = code;
-        code += count[i] | 0;
+        code += count[i] ?? 0;
         code <<= 1;
       }
       for (var i = 0; i < lengths.length; i++) {
         code = startCode[lengths[i]];
         startCode[lengths[i]] += 1;
         codes[i] = 0;
-        for (j = 0, m = lengths[i]; j < m; j++) {
+        for (j = 0; j < lengths[i]; j++) {
           codes[i] = codes[i] << 1 | code & 1;
           code >>>= 1;
         }
       }
       return codes;
-    }
-  };
-
-  // src/Util.ts
-  function stringToByteArray(str) {
-    var tmp = new Uint8Array(str.length);
-    for (var i = 0; i < tmp.length; i++) {
-      tmp[i] = str[i].charCodeAt(0) & 255;
-    }
-    return tmp;
-  }
-
-  // src/ByteStream.ts
-  var ByteStream = class {
-    constructor(buffer, pointer = 0) {
-      this.buffer = buffer;
-      this.p = pointer;
-      this.length = buffer.length;
-    }
-    get pointer() {
-      return this.p;
-    }
-    set pointer(x) {
-      this.p = x;
-    }
-    get offset() {
-      return this.p;
-    }
-    set offset(x) {
-      this.p = x;
-    }
-    readByte() {
-      return this.buffer[this.p++];
-    }
-    writeByte(byte) {
-      this.buffer[this.p++] = byte;
-    }
-    readShort() {
-      return this.buffer[this.p++] | this.buffer[this.p++] << 8;
-    }
-    writeShort(short) {
-      this.buffer[this.p++] = short & 255;
-      this.buffer[this.p++] = short >>> 8 & 255;
-    }
-    readUint() {
-      return (this.buffer[this.p++] | this.buffer[this.p++] << 8 | this.buffer[this.p++] << 16 | this.buffer[this.p++] << 24) >>> 0;
-    }
-    writeUint(uint) {
-      this.buffer[this.p++] = uint & 255;
-      this.buffer[this.p++] = uint >>> 8 & 255;
-      this.buffer[this.p++] = uint >>> 16 & 255;
-      this.buffer[this.p++] = uint >>> 24 & 255;
-    }
-    readUintBE() {
-      return (this.buffer[this.p++] << 24 | this.buffer[this.p++] << 16 | this.buffer[this.p++] << 8 | this.buffer[this.p++]) >>> 0;
-    }
-    writeUintBE(uint) {
-      this.buffer[this.p++] = uint >>> 24 & 255;
-      this.buffer[this.p++] = uint >>> 16 & 255;
-      this.buffer[this.p++] = uint >>> 8 & 255;
-      this.buffer[this.p++] = uint & 255;
-    }
-    readArray(len) {
-      return this.buffer.subarray(this.p, this.p += len);
-    }
-    writeArray(buf) {
-      this.buffer.set(buf, this.p);
-      this.p += buf.length;
-    }
-    readString(len) {
-      return new TextDecoder().decode(this.readArray(len));
-    }
-    writeString(str) {
-      this.writeArray(new TextEncoder().encode(str));
-    }
-    readAscii(len) {
-      var s = "";
-      var arr = this.readArray(len);
-      arr.forEach((n) => {
-        s += String.fromCharCode(n);
-      });
-      return s;
-    }
-    writeAscii(str) {
-      this.writeArray(stringToByteArray(str));
     }
   };
 
@@ -1844,6 +1815,8 @@
       this.output = null;
       //output buffer.
       this.op = 0;
+      //output buffer pointer.
+      this.crc32 = null;
       this.filename = "";
       this.comment = "";
       this.input = input;
@@ -1915,8 +1888,8 @@
       } else {
       }
       var b = new ByteStream(output, op);
-      var crc32 = CRC32.create(input);
-      b.writeUint(crc32);
+      this.crc32 = CRC32.create(input);
+      b.writeUint(this.crc32);
       var il = input.length;
       b.writeUint(il);
       this.ip = ip;
@@ -1937,8 +1910,9 @@
       //input buffer.
       this.ip = 0;
       //input buffer pointer.
-      this.member = [];
+      this.members = [];
       this.decompressed = false;
+      this.crc32 = null;
       this.input = input;
     }
     /**
@@ -1946,7 +1920,7 @@
      */
     getMembers() {
       if (!this.decompressed) this.decompress();
-      return this.member.slice();
+      return this.members.slice();
     }
     /**
      * inflate gzip data.
@@ -1966,7 +1940,7 @@
       var input = this.input;
       var b = new ByteStream(input, this.ip);
       member.id1 = b.readByte(), member.id2 = b.readByte();
-      if (member.id1 !== GZipMagicNumber[0] || member.id2 !== GZipMagicNumber[2]) {
+      if (member.id1 !== GZipMagicNumber[0] || member.id2 !== GZipMagicNumber[1]) {
         throw new Error("invalid file signature:" + member.id1 + "," + member.id2);
       }
       member.cm = b.readByte();
@@ -2017,14 +1991,15 @@
       member.data = inflated;
       b = new ByteStream(input, rawinflate.ip);
       var crc32 = b.readUint();
-      if (CRC32.create(inflated) !== crc32) {
+      this.crc32 = CRC32.create(inflated);
+      if (this.crc32 !== crc32) {
         throw new Error("invalid CRC-32 checksum: 0x" + CRC32.create(inflated).toString(16) + " / 0x" + crc32.toString(16));
       }
       var isize = b.readUint();
       if ((inflated.length & 4294967295) !== isize) {
         throw new Error("invalid input size: " + (inflated.length & 4294967295) + " / " + isize);
       }
-      this.member.push(member);
+      this.members.push(member);
       this.ip = b.p;
     }
     /**
@@ -2035,7 +2010,7 @@
       return ip + length;
     }
     concatMember() {
-      var member = this.member;
+      var member = this.members;
       var size = 0;
       for (var i = 0; i < member.length; ++i) {
         size += member[i].data.length;
@@ -2557,10 +2532,8 @@
      * @return {!Uint8Array} compressed data byte array.
      */
     compress() {
-      var output = this.output;
-      var b = new ByteStream(output, 0);
-      var cinfo = 7;
-      var cmf = cinfo << 4 | DEFLATE_TOKEN;
+      var b = new ByteStream(this.output, 0);
+      var cmf = 120;
       b.writeByte(cmf);
       var fdict = 0;
       var flevel = this.compressionType;
@@ -2571,18 +2544,15 @@
       var adler = Adler32.create(this.input);
       this.adler32 = adler;
       this.rawDeflate.op = b.p;
-      output = this.rawDeflate.compress();
+      var output = this.rawDeflate.compress();
       var pos = output.length;
-      output = new Uint8Array(output.buffer);
-      if (output.length <= pos + 4) {
-        this.output = new Uint8Array(output.length + 4);
-        this.output.set(output);
-        output = this.output;
-      }
-      output = output.subarray(0, pos + 4);
-      b = new ByteStream(output, pos);
+      b.buffer = output;
+      b.restoreBuffer();
+      b.setLength(pos + 4);
+      b.p = pos;
       b.writeUintBE(adler);
-      return output;
+      this.output = b.buffer;
+      return this.output;
     }
   };
 

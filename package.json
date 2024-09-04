@@ -13,7 +13,7 @@
         "minifyZip": "npx esbuild dist/Zlib-zip.js --minify --outfile=dist/Zlib-zip.min.js",
         "minifyGZip": "npx esbuild dist/Zlib-gzip.js --minify --outfile=dist/Zlib-gzip.min.js",
         "minifyDeflate": "npx esbuild dist/Zlib-deflate.js --minify --outfile=dist/Zlib-deflate.min.js",
-        "minifyMain": "npx esbuild dist/Zlib-main.js --minify --outfile=dist/Zlib-main.min.js",
+        "minifyMain": "npx esbuild src/index.ts --bundle --minify --metafile=dist/esbuild-min.json --outfile=dist/Zlib-main.min.js",
         "minify": "npm run minifyZip && npm run minifyGZip && npm run minifyDeflate && npm rum minifyMain",
 
         "compile": "npx tsc && npx tsc-alias"
