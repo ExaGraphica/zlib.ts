@@ -156,7 +156,8 @@ export class Unzip {
             var key = ZipCrypto.createKey(password);
             // encryption header
             for (var i = offset; i < offset + 12; ++i) {
-                ZipCrypto.encode(key, input[i]);
+                ZipCrypto.decode(key, input[i]);
+                console.log(input[i]);
             }
             console.log(localFileHeader.crc32);
             offset += 12;

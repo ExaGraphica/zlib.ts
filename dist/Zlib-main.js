@@ -45,7 +45,7 @@
      * @return {number} CRC32
      */
     single(num, crc) {
-      return CRC32.Table[(num ^ crc) & 255] ^ num >>> 8;
+      return CRC32.Table[(num ^ crc) & 255] ^ crc >>> 8;
     },
     /** CRC-32 Table. */
     Table: new Uint32Array(256),
@@ -2041,10 +2041,10 @@
      * Factors of 134775813: 20173 * 6681
      */
     updateKeys(key, n) {
-      key[0] = CRC32.single(key[0], n);
+      key[0] = CRC32.single(n, key[0]);
       key[1] = key[1] + (key[0] & 255);
-      key[1] = Number(BigInt(key[1]) * BigInt(134775813) + BigInt(1) & BigInt(4294967295));
-      key[2] = CRC32.single(key[2], key[1] >>> 24);
+      key[1] = Number(Math.imul(key[1], 134775813) + 1 & 4294967295);
+      key[2] = CRC32.single(key[1] >>> 24, key[2]);
     },
     /**
      * @param {(Array.<number>|Uint8Array)} password
@@ -2151,15 +2151,18 @@
         }
         if (file.option.password != void 0 || this.password != void 0) {
           var key = ZipCrypto.createKey(file.option.password ?? this.password);
+          console.log(key);
           var buffer = file.buffer;
           var tmp = new Uint8Array(buffer.length + 12);
           tmp.set(buffer, 12);
           buffer = tmp;
+          var b = new ByteStream(buffer, 0);
           for (var j = 0; j < 12; ++j) {
-            buffer[j] = ZipCrypto.decode(
-              key,
-              j === 11 ? file.crc32 & 255 : Math.floor(Math.random() * 256)
-            );
+            var C = buffer[j];
+            if (j == 10) C = file.crc32 >>> 8 & 255;
+            if (j == 11) C = file.crc32 >>> 0 & 255;
+            buffer[j] = ZipCrypto.encode(key, C);
+            console.log(C);
           }
           for (; j < buffer.length; ++j) {
             buffer[j] = ZipCrypto.encode(key, buffer[j]);
@@ -2395,7 +2398,8 @@
         if (!password) throw new Error("encrypted: please set password");
         var key = ZipCrypto.createKey(password);
         for (var i = offset; i < offset + 12; ++i) {
-          ZipCrypto.encode(key, input[i]);
+          ZipCrypto.decode(key, input[i]);
+          console.log(input[i]);
         }
         console.log(localFileHeader.crc32);
         offset += 12;

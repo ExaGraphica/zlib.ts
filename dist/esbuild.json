@@ -1,7 +1,7 @@
 {
   "inputs": {
     "src/CRC32.ts": {
-      "bytes": 2386,
+      "bytes": 2384,
       "imports": [],
       "format": "esm"
     },
@@ -11,7 +11,7 @@
       "format": "esm"
     },
     "src/BitStream.ts": {
-      "bytes": 4395,
+      "bytes": 4245,
       "imports": [
         {
           "path": "src/Constants.ts",
@@ -27,7 +27,7 @@
       "format": "esm"
     },
     "src/Huffman.ts": {
-      "bytes": 2490,
+      "bytes": 2422,
       "imports": [],
       "format": "esm"
     },
@@ -48,12 +48,12 @@
       "format": "esm"
     },
     "src/LZ77.ts": {
-      "bytes": 11694,
+      "bytes": 11978,
       "imports": [],
       "format": "esm"
     },
     "src/Util.ts": {
-      "bytes": 275,
+      "bytes": 263,
       "imports": [],
       "format": "esm"
     },
@@ -162,7 +162,7 @@
       "format": "esm"
     },
     "src/ZipCrypto.ts": {
-      "bytes": 1844,
+      "bytes": 1922,
       "imports": [
         {
           "path": "src/CRC32.ts",
@@ -178,7 +178,7 @@
       "format": "esm"
     },
     "src/Zip.ts": {
-      "bytes": 12299,
+      "bytes": 12678,
       "imports": [
         {
           "path": "src/ByteStream.ts",
@@ -209,7 +209,7 @@
       "format": "esm"
     },
     "src/Unzip.ts": {
-      "bytes": 11196,
+      "bytes": 11236,
       "imports": [
         {
           "path": "src/CRC32.ts",
@@ -387,13 +387,13 @@
           "bytesInOutput": 3835
         },
         "src/ZipCrypto.ts": {
-          "bytesInOutput": 1471
+          "bytesInOutput": 1449
         },
         "src/Zip.ts": {
-          "bytesInOutput": 6739
+          "bytesInOutput": 6875
         },
         "src/Unzip.ts": {
-          "bytesInOutput": 7167
+          "bytesInOutput": 7200
         },
         "src/Adler32.ts": {
           "bytesInOutput": 1312
@@ -408,7 +408,7 @@
           "bytesInOutput": 109
         }
       },
-      "bytes": 80278
+      "bytes": 80425
     }
   }
 }

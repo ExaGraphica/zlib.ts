@@ -47,7 +47,7 @@ export const CRC32 = {
      * @return {number} CRC32
      */
     single(num, crc) {
-        return (CRC32.Table[(num ^ crc) & 0xFF] ^ (num >>> 8));
+        return CRC32.Table[(num ^ crc) & 0xFF] ^ (crc >>> 8);
     },
     /** CRC-32 Table. */
     Table: new Uint32Array(256),
