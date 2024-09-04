@@ -7,6 +7,7 @@ import { Heap } from "./Heap";
 import { HuffmanOrder } from "./RawInflate";
 import { DefaultDeflateBufferSize } from "./Constants";
 import { LZ77 } from "LZ77";
+import { ByteStream } from "ByteStream";
 
 export enum CompressionType {
     NONE = 0,
@@ -114,41 +115,40 @@ export class RawDeflate{
 
     /**
      * Create uncompressed block
-     * @param {!(Array<number>|Uint8Array)} blockArray Block data
+     * @param {!Uint8Array} blockArray Block data
      * @param {!boolean} isFinalBlock Is this the last block?
      * @return {!Uint8Array} Uncompressed block
      */
-    makeNocompressBlock(blockArray: number[] | Uint8Array, isFinalBlock: boolean): Uint8Array {
+    makeNocompressBlock(blockArray: Uint8Array, isFinalBlock: boolean): Uint8Array {
         var output = this.output;
-        var op = this.op;
 
         // expand buffer
         output = new Uint8Array(this.output.buffer);
-        while (output.length <= op + blockArray.length + 5) {
-            output = new Uint8Array(output.length << 1);
+        var b = new ByteStream(output, this.op);
+        
+        var len = output.length;
+        while (len <= this.op + blockArray.length + 5) {
+            len = len << 1;
         }
-        output.set(this.output);
+        b.expandLength(len);
 
         // header
         var btype = CompressionType.NONE;
-        output[op++] = (isFinalBlock ? 1 : 0) | (btype << 1);
+        b.writeByte((isFinalBlock ? 1 : 0) | (btype << 1));
 
         // length
         var len = blockArray.length;
-        var nlen = (~len + 0x10000) & 0xFFFF;
-        output[op++] = len & 0xFF;
-        output[op++] = (len >>> 8) & 0xFF;
-        output[op++] = nlen & 0xFF;
-        output[op++] = (nlen >>> 8) & 0xFF;
+        //var nlen = (~len + 0x10000) & 0xFFFF;
+        var nlen = len ^ 0xFFFF;
+        b.writeShort(len);
+        b.writeShort(nlen);
 
         // copy buffer
-        output.set(blockArray, op);
-        op += blockArray.length;
-        output = output.subarray(0, op);
+        b.writeArray(blockArray);
+        b.truncateBuffer(b.p);
 
-        this.op = op;
-        this.output = output;
-
+        this.output = b.buffer, this.op = b.p;
+        
         return output;
     };
 

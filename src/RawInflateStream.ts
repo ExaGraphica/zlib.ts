@@ -569,9 +569,9 @@ export class RawInflateStream {
 
     /**
      * concat output buffer. (dynamic)
-     * @return {!(Array|Uint8Array)} output buffer.
+     * @return {!Uint8Array} output buffer.
      */
-    concatBuffer() {
+    concatBuffer(): Uint8Array {
         var op = this.op;
 
         var buffer = this.resize
