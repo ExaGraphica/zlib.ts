@@ -177,7 +177,7 @@ export class RawInflateStream {
         while (bitsbuflen < length) {
             // input byte
             if (input.length <= ip) {
-                return -1;
+                return Z_ERR;
             }
             octet = input[ip++];
 
@@ -223,7 +223,7 @@ export class RawInflateStream {
         // not enough buffer
         while (bitsbuflen < maxCodeLength) {
             if (input.length <= ip) {
-                return -1;
+                return Z_ERR;
             }
             octet = input[ip++];
             bitsbuf |= octet << bitsbuflen;
@@ -383,22 +383,25 @@ export class RawInflateStream {
             var lengthTable = new Uint8Array(hlit + hdist);
             for (var i = 0; i < hlit + hdist;) {
                 var code = this.readCodeByTable(codeLengthsTable);
-                if (code < 0) throw NEI;
+                if (code == Z_ERR) throw NEI;
 
                 switch (code) {
                     case 16:
-                        if ((bits = this.readBits(2)) < 0) throw NEI;
+                        bits = this.readBits(2);
+                        if (bits == Z_ERR) throw NEI;
                         var repeat = 3 + bits;
                         while (repeat--) { lengthTable[i++] = prev; }
                         break;
                     case 17:
-                        if ((bits = this.readBits(3)) < 0) throw NEI;
+                        bits = this.readBits(3);
+                        if (bits == Z_ERR) throw NEI;
                         var repeat = 3 + bits;
                         while (repeat--) { lengthTable[i++] = 0; }
                         prev = 0;
                         break;
                     case 18:
-                        if ((bits = this.readBits(7)) < 0) throw NEI;
+                        bits = this.readBits(7);
+                        if (bits == Z_ERR) throw NEI;
                         var repeat = 11 + bits;
                         while (repeat--) { lengthTable[i++] = 0; }
                         prev = 0;
@@ -448,10 +451,10 @@ export class RawInflateStream {
             this.saveBackup();
 
             var code = this.readCodeByTable(litlen);
-            if (code < 0) {
+            if (code == Z_ERR) {
                 this.op = op;
                 this.restoreBackup();
-                return -1;
+                return Z_ERR;
             }
 
             if (code === 256) {
