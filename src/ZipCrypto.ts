@@ -1,6 +1,8 @@
 import { CRC32 } from "./CRC32";
 import { stringToByteArray } from "./Util";
 
+// https://github.com/artem-karpenko/archiver-zip-encrypted/blob/master/lib/zip20/CryptoCipher.js
+
 export const ZipCrypto = {
     /**
      * @param {(Array.<number>|Uint32Array)} key
@@ -18,10 +20,10 @@ export const ZipCrypto = {
      * Factors of 134775813: 20173 * 6681
      */
     updateKeys(key: Uint32Array, n: number) {
-        key[0] = CRC32.single(key[0], n);
+        key[0] = CRC32.single(n, key[0]);
         key[1] = key[1] + (key[0] & 0xFF);
-        key[1] = Number((BigInt(key[1]) * BigInt(134775813) + BigInt(1)) & BigInt(0xFFFFFFFF));
-        key[2] = CRC32.single(key[2], key[1] >>> 24);
+        key[1] = Number((Math.imul(key[1],134775813) + 1) & 0xFFFFFFFF);
+        key[2] = CRC32.single(key[1] >>> 24, key[2]);
     },
 
     /**

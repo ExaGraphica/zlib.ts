@@ -153,6 +153,7 @@ export class Zip {
             if (file.option.password != undefined || this.password != undefined) {
                 // init encryption
                 var key = ZipCrypto.createKey((file.option.password ?? this.password)!);
+                console.log(key);
 
                 // add header
                 var buffer = file.buffer;
@@ -162,15 +163,20 @@ export class Zip {
                 tmp.set(buffer, 12);
                 buffer = tmp;
 
+                var b = new ByteStream(buffer, 0);
+                //b.writeUint(key[0]);b.writeUint(key[1]);b.writeUint(key[2]);
+                //b.writeUint(key[2]);b.writeUint(key[1]);b.writeUint(key[0]);
                 for (var j = 0; j < 12; ++j) {
-                    buffer[j] = ZipCrypto.decode(
-                        key,
-                        j === 11 ? (file.crc32 & 0xFF) : Math.floor(Math.random() * 256)
-                    );
+                    var C = buffer[j];
+                    //var C = Math.floor(Math.random() * 256);
+                    if(j == 10) C = (file.crc32 >>> 8) & 0xFF;
+                    if(j == 11) C = (file.crc32 >>> 0) & 0xFF;
+                    buffer[j] = ZipCrypto.encode(key,C);
                     /*var C = (j == 11) ? file.crc32 & 0xFF : Math.floor(Math.random() * 256);
                     C ^= ZipCrypto.getByte(key);
                     ZipCrypto.updateKeys(key, C);
                     buffer[j] = C;*/
+                    console.log(C);
                 }
 
                 // data encryption
