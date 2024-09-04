@@ -363,7 +363,7 @@ export class RawDeflate{
             var runLength = j;
 
             if (src[i] === 0) {
-                // 0 の繰り返しが 3 回未満ならばそのまま
+                // If the number of 0s is less than 3, leave it as is.
                 if (runLength < 3) {
                     while (runLength-- > 0) {
                         result[nResult++] = 0;
@@ -371,19 +371,19 @@ export class RawDeflate{
                     }
                 } else {
                     while (runLength > 0) {
-                        // 繰り返しは最大 138 までなので切り詰める
+                        // The maximum number of repetitions is 138, so truncate it.
                         var rpt = (runLength < 138 ? runLength : 138);
 
                         if (rpt > runLength - 3 && rpt < runLength) {
                             rpt = runLength - 3;
                         }
 
-                        // 3-10 回 -> 17
+                        // 3-10 times -> 17
                         if (rpt <= 10) {
                             result[nResult++] = 17;
                             result[nResult++] = rpt - 3;
                             freqs[17]++;
-                            // 11-138 回 -> 18
+                            // 11-138 times -> 18
                         } else {
                             result[nResult++] = 18;
                             result[nResult++] = rpt - 11;
