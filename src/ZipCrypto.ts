@@ -1,6 +1,8 @@
 import { CRC32 } from "./CRC32";
 import { stringToByteArray } from "./Util";
 
+// https://github.com/Stuk/jszip/blob/2ceb998e29d4171b4f3f2ecab1a2195c696543c0/docs/APPNOTE.TXT#L2232
+// https://link.springer.com/content/pdf/10.1007/3-540-60590-8_12.pdf
 // https://github.com/artem-karpenko/archiver-zip-encrypted/blob/master/lib/zip20/CryptoCipher.js
 
 export const ZipCrypto = {
