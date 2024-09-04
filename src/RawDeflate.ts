@@ -310,10 +310,8 @@ export class RawDeflate{
             var literal = lzOutput[index];
 
             // Write the code
-            BitStream.prototype.writeBits.apply(
-                stream,
-                FixedHuffmanTable[literal]
-            );
+            var huffCode = FixedHuffmanTable[literal];
+            stream.writeBits(huffCode[0], huffCode[1]);
 
             // Length / distance code
             if (literal > 0x100) {

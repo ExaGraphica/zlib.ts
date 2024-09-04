@@ -7,6 +7,10 @@ const LZ77MaxLength = 258;
 /** LZ77 window size */
 const WindowSize = 0x8000;
 
+type LZ77Match = {
+    len: number,
+    backwardDistance: number
+};
 type LZ77Array = number[];
 
 export const LZ77Array = {
@@ -93,8 +97,9 @@ export const LZ77Array = {
      *    CODE, EXTRA-BIT-LEN, EXTRA //Distance code
      * ]
      */
-    create(length: number, backwardDistance: number): LZ77Array{
-        return this.getLengthCode(length).concat(this.getDistanceCode(backwardDistance));
+    create(match: LZ77Match): LZ77Array{
+        //return this.getLengthCode(match[0]).concat(this.getDistanceCode(match[1]));
+        return this.getLengthCode(match.len).concat(this.getDistanceCode(match.backwardDistance));
     },
 }
 
@@ -105,7 +110,7 @@ export class LZ77{
     output: Uint16Array;//LZ77 buffer
     pos: number = 0;
     
-    prevMatch: LZ77Array | null = null;//previous longest match
+    prevMatch: LZ77Match | null = null;//previous longest match
     skipLength: number = 0;//skiplength
     
     freqsDist: Uint32Array;
@@ -128,14 +133,16 @@ export class LZ77{
         this.output[this.pos++] = n;
     }
     
-    writeMatch(match: LZ77Array, offset: number){
-        for (var i = 0; i < match.length; ++i) {
-            this.writeNum(match[i]);
+    writeMatch(match: LZ77Match, offset: number){
+        var arr = LZ77Array.create(match);
+        for (var i = 0; i < arr.length; i++) {
+            this.writeNum(arr[i]);
         }
         
-        this.freqsLitLen[match[0]]++;
-        this.freqsDist[match[3]]++;
-        this.skipLength = match.length + offset - 1;
+        this.freqsLitLen[arr[0]]++;
+        this.freqsDist[arr[3]]++;
+        //this.skipLength = match[0] + offset - 1;
+        this.skipLength = match.len + offset - 1;
         this.prevMatch = null;
     }
     
@@ -148,7 +155,7 @@ export class LZ77{
     }
     
     //Find the longest match among match candidates
-    searchLongestMatch(position: number, matchList: number[]){
+    searchLongestMatch(position: number, matchList: number[]): LZ77Match{
         var currentMatch = matchList[matchList.length],//currentMatch default isn't really useful
             matchMax = 0,
             inputLength = this.input.length;
@@ -183,7 +190,8 @@ export class LZ77{
             if(matchLength == LZ77MaxLength) break;
         }
         
-        return LZ77Array.create(matchMax, position - currentMatch);
+        //return [matchMax, position - currentMatch];
+        return {len: matchMax, backwardDistance: position - currentMatch};
     }
     
     encode(){
@@ -207,11 +215,10 @@ export class LZ77{
             var matchList = table[matchKey];
             
             //skip
-            if(this.skipLength > 0){
+            if((this.skipLength--) > 0){
                 matchList.push(position);
                 continue;
             }
-            this.skipLength--;
             
             // Update match table (Remove anything exceeding the max return distance)
             while(matchList.length > 0 && (position - matchList[0]) > WindowSize){
@@ -238,7 +245,7 @@ export class LZ77{
                 
                 if(this.prevMatch){
                     // Current match longer than previous?
-                    if(this.prevMatch.length < longestMatch.length){
+                    if(this.prevMatch.len < longestMatch.len){
                         // write previous literal
                         tmp = this.input[position - 1];
                         this.writeNum(tmp);
@@ -250,7 +257,7 @@ export class LZ77{
                         //else write previous match
                         this.writeMatch(this.prevMatch, -1);
                     }
-                } else if(longestMatch.length < this.lazy){
+                } else if(longestMatch.len < this.lazy){
                     this.prevMatch = longestMatch;
                 } else{
                     this.writeMatch(longestMatch, 0);
