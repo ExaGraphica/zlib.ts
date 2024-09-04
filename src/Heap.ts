@@ -4,7 +4,9 @@
 
 export class Heap {
     buffer: Uint16Array;
-    length: number;
+    length: number = 0;
+    nodes: number = 0;
+    
     /**
      * A heap implementation for use with custom Huffman codes.
      * @param {number} size Heap size
@@ -12,7 +14,6 @@ export class Heap {
      */
     constructor(size: number) {
         this.buffer = new Uint16Array(size * 2);
-        this.length = 0;
     }
 
     /**
@@ -47,6 +48,7 @@ export class Heap {
         current = this.length;
         heap[this.length++] = value;
         heap[this.length++] = index;
+        this.nodes++;
 
         // Swapping until the root node is reached
         while (current > 0) {
@@ -78,22 +80,21 @@ export class Heap {
      *     value: key, length: new heap size}
      */
     pop(): {index: number, value: number, length: number} {
-        var index, value,
-            heap = this.buffer, swap,
-            current, parent;
+        var heap = this.buffer, swap;
 
-        value = heap[0];
-        index = heap[1];
+        var value = heap[0];
+        var index = heap[1];
 
         // Get the value one before this
+        this.nodes--;
         this.length -= 2;
         heap[0] = heap[this.length];
         heap[1] = heap[this.length + 1];
 
-        parent = 0;
+        var parent = 0;
         // Go down the tree from the root node
         while (true) {
-            current = this.getChild(parent);
+            var current = this.getChild(parent);
 
             // check range
             if (current >= this.length) {

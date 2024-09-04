@@ -265,7 +265,6 @@ export class RawDeflate{
         dist: [Uint16Array, Uint8Array], 
         stream: BitStream
     ): BitStream {
-
         var litLenCodes = litLen[0];
         var litLenLengths = litLen[1];
         var distCodes = dist[0];
@@ -449,8 +448,8 @@ export class RawDeflate{
                 heap.push(i, freqs[i]);
             }
         }
-        var nodes = new Array(heap.length / 2);
-        var values = new Uint32Array(heap.length / 2);
+        var nodes = new Array(heap.nodes);
+        var values = new Uint32Array(heap.nodes);
 
         // If there is only one non-zero element, assign it a code length of 1 and exit
         if (nodes.length === 1) {
@@ -459,8 +458,8 @@ export class RawDeflate{
         }
 
         // Determine the code length of a Canonical Huffman Code by using the Reverse Package Merge Algorithm
-        var heapLength = heap.length / 2;
-        for (var i = 0; i < heapLength; ++i) {
+        var heapNodes = heap.nodes;
+        for (var i = 0; i < heapNodes; ++i) {
             nodes[i] = heap.pop();
             values[i] = nodes[i].value;
         }
@@ -582,17 +581,17 @@ export class RawDeflate{
         var codes = new Uint16Array(lengths.length),
             count: number[] = [],
             startCode: number[] = [],
-            code = 0, il, j, m;
+            code = 0, j, m;
 
         // Count the codes of each length.
         for (var i = 0; i < lengths.length; i++) {
-            count[lengths[i]] = (count[lengths[i]] | 0) + 1;
+            count[lengths[i]] = (count[lengths[i]] ?? 0) + 1;
         }
 
         // Determine the starting code for each length block.
         for (var i = 1; i <= MaxCodeLength; i++) {
             startCode[i] = code;
-            code += count[i] | 0;
+            code += count[i] ?? 0;
             code <<= 1;
         }
 
@@ -602,7 +601,7 @@ export class RawDeflate{
             startCode[lengths[i]] += 1;
             codes[i] = 0;
 
-            for (j = 0, m = lengths[i]; j < m; j++) {
+            for (j = 0; j < lengths[i]; j++) {
                 codes[i] = (codes[i] << 1) | (code & 1);
                 code >>>= 1;
             }
