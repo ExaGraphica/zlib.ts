@@ -38,7 +38,7 @@ export class Deflate {
         Object.assign(rawDeflateOption, opts)
 
         // set raw-deflate output buffer
-        rawDeflateOption['outputBuffer'] = this.output;
+        rawDeflateOption.outputBuffer = this.output;
 
         this.rawDeflate = new RawDeflate(this.input, rawDeflateOption);
     }

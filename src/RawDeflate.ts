@@ -3,7 +3,7 @@
  */
 
 import { BitStream } from "./BitStream";
-import { Heap } from "./Heap";
+import { Heap, HeapInfo } from "./Heap";
 import { HuffmanOrder } from "./RawInflate";
 import { DefaultDeflateBufferSize } from "./Constants";
 import { LZ77 } from "LZ77";
@@ -448,7 +448,7 @@ export class RawDeflate{
                 heap.push(i, freqs[i]);
             }
         }
-        var nodes = new Array(heap.nodes);
+        var nodes: HeapInfo[] = new Array(heap.nodes);
         var values = new Uint32Array(heap.nodes);
 
         // If there is only one non-zero element, assign it a code length of 1 and exit

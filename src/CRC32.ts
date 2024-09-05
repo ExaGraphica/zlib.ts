@@ -2,9 +2,6 @@
  * @fileoverview CRC32 Implementation.
  */
 
-const CRC32_COMPACT: boolean = false;
-
-
 export const CRC32 = {
     /**
      * CRC32 checksum creation

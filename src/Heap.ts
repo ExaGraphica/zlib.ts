@@ -2,6 +2,12 @@
  * @fileoverview Heap Sort implementation for use with Huffman coding.
  */
 
+export interface HeapInfo{
+    index: number,
+    value: number,
+    length: number
+}
+
 export class Heap {
     buffer: Uint16Array;
     length: number = 0;
@@ -79,7 +85,7 @@ export class Heap {
      * @return {{index: number, value: number, length: number}} {index: key index,
      *     value: key, length: new heap size}
      */
-    pop(): {index: number, value: number, length: number} {
+    pop(): HeapInfo {
         var heap = this.buffer, swap;
 
         var value = heap[0];
