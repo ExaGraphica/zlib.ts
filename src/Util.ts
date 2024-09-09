@@ -1,13 +1,13 @@
 /**
- * @fileoverview Misellaneous functions.
+ * @fileoverview Miscellaneous functions.
  */
 
 export function stringToByteArray(str: string){
-    var tmp = new Uint8Array(str.length);
+    var arr = new Uint8Array(str.length);
     
-    for (var i = 0; i < tmp.length; i++) {
-        tmp[i] = str[i].charCodeAt(0) & 0xFF;
+    for (var i = 0; i < arr.length; i++) {
+        arr[i] = str[i].charCodeAt(0) & 0xFF;
     }
     
-    return tmp;
+    return arr;
 };

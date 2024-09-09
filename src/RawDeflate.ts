@@ -298,7 +298,7 @@ export class RawDeflate{
 
     /**
      * Fixed Huffman Coding
-     * @param {!(Array<number>|Uint16Array)} dataArray LZ77-encoded byte array.
+     * @param {!LZ77} lz LZ77 object
      * @param {!BitStream} stream Write to BitStream.
      * @return {!BitStream} Huffman-encoded BitStream object.
      */

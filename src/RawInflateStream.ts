@@ -208,31 +208,23 @@ export class RawInflateStream {
             bitsbuflen = this.bitsbuflen,
             input = this.input,
             ip = this.ip;
-
-        /** @type {!(Array|Uint8Array)} huffman code table */
-        var codeTable = table[0];
-        /** @type {number} */
+        
+        var codeTable = table[0];//huffman code table
         var maxCodeLength = table[1];
-        /** @type {number} input byte */
-        var octet;
-        /** @type {number} code length & code (16bit, 16bit) */
-        var codeWithLength;
-        /** @type {number} code bits length */
-        var codeLength;
 
         // not enough buffer
         while (bitsbuflen < maxCodeLength) {
             if (input.length <= ip) {
                 return Z_ERR;
             }
-            octet = input[ip++];
+            var octet = input[ip++];
             bitsbuf |= octet << bitsbuflen;
             bitsbuflen += 8;
         }
 
         // read max length
-        codeWithLength = codeTable[bitsbuf & ((1 << maxCodeLength) - 1)];
-        codeLength = codeWithLength >>> 16;
+        var codeWithLength = codeTable[bitsbuf & ((1 << maxCodeLength) - 1)];//code length & code (16bit, 16bit)
+        var codeLength = codeWithLength >>> 16;//code bits length
 
         if (codeLength > bitsbuflen) {
             throw new Error('invalid code length: ' + codeLength);
@@ -249,9 +241,6 @@ export class RawInflateStream {
      * read uncompressed block header
      */
     readUncompressedBlockHeader(): Z_STATUS {
-        var len: number;//block length
-        var nlen: number;//number for check block length
-
         var input = this.input;
         var ip = this.ip;
 
@@ -261,11 +250,11 @@ export class RawInflateStream {
             return Z_ERR;
         }
 
-        len = input[ip++] | (input[ip++] << 8);
-        nlen = input[ip++] | (input[ip++] << 8);
+        var len = input[ip++] | (input[ip++] << 8);//block length
+        var nlen = input[ip++] | (input[ip++] << 8);//number for check block length
 
         // check len & nlen
-        if (len === ~nlen) {
+        if (len == (nlen ^ 0xFFFF)) {
             throw new Error('invalid uncompressed block header: length verify');
         }
 

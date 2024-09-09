@@ -106,7 +106,6 @@ export const LZ77Array = {
 export class LZ77{
     input: Uint8Array;
     
-    table: {[key: number]: number[]} = {};//chained-hash-table
     output: Uint16Array;//LZ77 buffer
     pos: number = 0;
     
@@ -156,7 +155,7 @@ export class LZ77{
     
     //Find the longest match among match candidates
     searchLongestMatch(position: number, matchList: number[]): LZ77Match{
-        var currentMatch = matchList[matchList.length],//currentMatch default isn't really useful
+        var currentMatch = matchList[matchList.length - 1],//currentMatch default isn't really useful
             matchMax = 0,
             inputLength = this.input.length;
         
